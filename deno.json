@@ -1,0 +1,12 @@
+{
+	"imports": {
+		"@oak/oak": "jsr:@oak/oak@^16.1.0",
+		"@vento/vento": "jsr:@vento/vento@^1.12.10"
+	},
+	"fmt": {
+		"useTabs": true
+	},
+	"tasks": {
+		"run": "deno run -A ./src/main.ts"
+	}
+}
