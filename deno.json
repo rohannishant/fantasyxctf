@@ -1,12 +1,15 @@
 {
 	"imports": {
+		"@mark/html": "jsr:@mark/html@^1.0.0",
 		"@oak/oak": "jsr:@oak/oak@^16.1.0",
-		"@vento/vento": "jsr:@vento/vento@^1.12.10"
+		"@std/encoding": "jsr:@std/encoding@^1.0.1",
+		"postgres": "https://deno.land/x/postgresjs@v3.4.4/mod.js"
 	},
 	"fmt": {
 		"useTabs": true
 	},
 	"tasks": {
-		"run": "deno run -A ./src/main.ts"
+		"run": "deno run -A ./src/main.ts",
+		"migrate": "goose -dir migrations postgres \"user=rohan dbname=fantasyxctf\" up"
 	}
 }

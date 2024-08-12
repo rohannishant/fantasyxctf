@@ -1,18 +1,23 @@
 import { Application } from "@oak/oak/application";
 import { Router } from "@oak/oak/router";
-import vento from "@vento/vento";
 
-const env = vento({
-	autoescape: true,
-	includes: "./src/views"
-})
+import IndexController from "./Controllers/Index.ts";
+import AuthController, { AuthMiddleware } from "./Controllers/Auth.ts";
+
+import sql from "./db.ts";
+console.log(await sql`SELECT user_id, username from users;`);
+
 
 const router = new Router();
-router.get("/", async ctx => {
-	ctx.response.body = (await env.run("template.vto", {"title": "hello world!", "view": "index.vto"})).content;
-});
+function useController(path: string, r: Router) {
+	router.use(path, r.routes());
+	router.use(path, r.allowedMethods());
+}
+useController("", IndexController);
+useController("", AuthController);
 
 const app = new Application();
+app.use(AuthMiddleware);
 app.use(router.routes());
 app.use(router.allowedMethods());
 
