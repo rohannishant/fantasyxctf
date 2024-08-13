@@ -12,4 +12,10 @@ router.get("/", ctx => {
 	);
 });
 
+router.get("/robots.txt", ctx => {
+	ctx.response.body = 
+`User-Agent: *
+Disallow: /`;
+})
+
 export default router;

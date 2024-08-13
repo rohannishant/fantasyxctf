@@ -12,15 +12,52 @@ const loginForm = html`
 	<p>login</p>
 	
 	<label for="login-username">username:</label>
-	<input type="text" id="login-username" name="username" required></input> 
+	<input type="text" id="login-username" name="username" required maxlength="20"></input> 
 	
 	<label for="login-password">password:</label>
-	<input type="password" id="login-password" name="password" required></input>
+	<input type="password" id="login-password" name="password" required maxlength="20"></input>
 
 	<input type="submit" value="submit"></input>
 </form>
 </div>
 `;
+
+const signupForm = html`
+<div class="notice">
+<form action="/signup" method="post">
+	<p>sign up</p>
+	<p>max 20 characters for username and password. username must contain no spaces or special characters except underscore.</p>
+	
+	<label for="signup-username">username:</label>
+	<input type="text" id="signup-username" name="username" required maxlength="20"></input> 
+	
+	<label for="signup-password">password:</label>
+	<input type="password" id="signup-password" name="password" required maxlength="20"></input>
+
+	<label for="signup-password-confirm">confirm password:</label>
+	<input type="password" id="signup-password-confirm" name="confirmpassword" required maxlength="20"></input>
+
+	<input type="submit" value="submit"></input>
+</form>
+</div>
+`;
+
+const deleteForm = html`
+<form action="/account/delete" method="post">
+	<fieldset>
+		<legend>delete account</legend>
+
+		<input type="checkbox" id="sure1" name="sure1" _="on click toggle @disabled on #delete-submit"/>
+		<label for="sure1">are you sure?</label>
+
+		<input type="submit" value="submit" id="delete-submit" disabled></input>
+	</fieldset>
+</form>
+`;
+
+async function cookieAuth(ctx: Context, username: string, password: string) {
+	await ctx.cookies.set("auth", encodeBase64(username + "\n" + password), {httpOnly: true, secure: false});
+}
 
 const router = new Router();
 router.get("/login_form", ctx => {
@@ -30,16 +67,26 @@ router.get("/login_form", ctx => {
 router.post("/login", async ctx => {
 	const credentials = await ctx.request.body.formData();
 
-	const username = credentials.get("username") as string;
+	let username = credentials.get("username") as string;
 	const password = credentials.get("password") as string;
 
-	const query = await sql`SELECT pass from users WHERE username=${username};`;
+	if (username != null && password != null) {
+		username = username.toLowerCase();
 
-	if (query.length > 0 &&
-		query[0].pass == password) {
-		await ctx.cookies.set("auth", encodeBase64(username + "\n" + password), {httpOnly: true, secure: false});
-		ctx.response.headers.set("Location", "/");
-		ctx.response.status = Status.SeeOther;
+		const query = await sql`SELECT pass from users WHERE username=${username};`;
+		if (query.length > 0 &&
+			query[0].pass == password) {
+			await cookieAuth(ctx, username, password);
+			ctx.response.headers.set("Location", "/");
+			ctx.response.status = Status.SeeOther;
+		}
+		else {
+			ctx.response.status = Status.Unauthorized;
+			ctx.response.body = page("login failed", html`
+				<h3 style="color: red">login failed, please try again"</h3>
+				<a href="/">go back home</a>
+				${loginForm}`, ctx.state, false);
+		}
 	}
 	else {
 		ctx.response.status = Status.Unauthorized;
@@ -54,6 +101,81 @@ router.get("/logout", async ctx => {
 	await ctx.cookies.delete("auth");
 	ctx.response.headers.set("Location", "/");
 	ctx.response.status = Status.SeeOther;
+});
+
+router.get("/signup_form", ctx => {
+	ctx.response.body = signupForm();
+})
+
+router.get("/account/delete_form", ctx => {
+	ctx.response.body = deleteForm();
+});
+
+router.post("/account/delete", async ctx => {
+	if (ctx.state.authenticated) {
+		await sql`DELETE from users WHERE username=${ctx.state.username}`;
+
+		ctx.response.body = page("account deleted", html`
+				<p style="color: green;">your account has been deleted</p>
+				<a href="/">go back home</a>
+			`, ctx.state, false);
+	}
+	else {
+		ctx.response.headers.set("Location", "/");
+		ctx.response.status = Status.SeeOther;
+	}
+});
+
+router.post("/signup", async ctx => {
+	const credentials = await ctx.request.body.formData();
+
+	let username = credentials.get("username") as string;
+	const password = credentials.get("password") as string;
+	const confirmPassword = credentials.get("confirmpassword") as string;
+	if (username != null) {
+		username = username.toLowerCase();
+	}
+
+	const re = /^[a-zA-Z0-9_]+$/;
+
+	if (username != null && !re.test(username)) {
+		ctx.response.status = Status.BadRequest;
+		ctx.response.body = page("failed to sign up", html`
+			<p style="color: red">sorry, your username contained invalid characters</p>
+			<a href="/">go back home</a>
+			${signupForm}`, ctx.state, false);
+	}
+	else if (username != null && (await sql`SELECT from users WHERE username=${username}`).length > 0) {
+		ctx.response.status = Status.BadRequest;
+		ctx.response.body = page("failed to sign up", html`
+			<p style="color: red">sorry, that username already exists</p>
+			<a href="/">go back home</a>
+			${signupForm}`, ctx.state, false);
+	}
+	else if (username != null && password != null && confirmPassword != null && !username.includes("\n") && !password.includes("\n") &&
+	username.length > 0 && username.length <= 20 && password.length > 0 && password.length <= 20) {
+		
+		if (password == confirmPassword) {
+			await sql`INSERT INTO users (username, pass) VALUES (${username}, ${password})`;
+			await cookieAuth(ctx, username, password);
+			ctx.response.headers.set("Location", "/");
+			ctx.response.status = Status.SeeOther;
+		}
+		else {
+			ctx.response.status = Status.BadRequest;
+			ctx.response.body = page("failed to sign up", html`
+				<p style="color: red">sorry, your passwords did not match</p>
+				<a href="/">go back home</a>
+				${signupForm}`, ctx.state, false);
+		}
+	}
+	else {
+		ctx.response.status = Status.BadRequest;
+		ctx.response.body = page("failed to sign up", html`
+			<p style="color: red">failed to create account, please make sure you entered everything correctly</p>
+			<a href="/">go back home</a>
+			${signupForm}`, ctx.state, false);
+	}
 });
 
 export default router;

@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE users(
 	user_id SERIAL PRIMARY KEY,
-	username VARCHAR(20) NOT NULL,
+	username VARCHAR(20) UNIQUE NOT NULL,
 	pass VARCHAR(20) NOT NULL
 );
 
