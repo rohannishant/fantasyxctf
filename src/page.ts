@@ -10,19 +10,24 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 		<link rel="stylesheet" href="https://unpkg.com/simpledotcss@2.3.2/simple.min.css" integrity="sha384-a8MdcEOz+xtPJb1l6GTwApIkj5ou00axL+3y5Yps9lyCkNGQ8tteJhV+YMbvT/Mr" crossorigin="anonymous">
 		<script src="https://unpkg.com/htmx.org@2.0.1/dist/htmx.js" integrity="sha384-gpIh5aLQ0qmX8kZdyhsd6jA24uKLkqIr1WAGtantR4KsS97l/NRBvh8/8OYGThAf" crossorigin="anonymous"></script>
 		<script src="https://unpkg.com/hyperscript.org@0.9.12" integrity="sha384-+Uth1QzYJsTjnS5SXVN3fFO4I32Y571xIuv53WJ2SA7y5/36tKU1VCutONAmg5eH" crossorigin="anonymous"></script>
+		<style>
+			ul#auth_options > li {
+				margin: 1em;
+			}
+		</style>
 	</head>
 	<body>
 		<h1>fantasy xc</h1>
 		${ showAuth ? html`<div class="notice">
 			${state.authenticated ? 
 				html`<p>logged in as ${state.username}</p>
-				<ul>
+				<ul id="auth_options">
 				<li><a href="/logout">log out</a></li>
 				<li><button hx-get="/account/delete_form" hx-target="#form-container" hx-swap="innerHTML">delete account</button></li>
 				</ul>` :
 
 				html`<p>you are not logged in</p>
-				<ul>
+				<ul id="auth_options">
 				<li><button hx-get="/login_form" hx-target="#form-container" hx-swap="innerHTML">log in</button></li>
 				<li><button hx-get="/signup_form" hx-target="#form-container" hx-swap="innerHTML">sign up</a></li>
 				</ul>`
