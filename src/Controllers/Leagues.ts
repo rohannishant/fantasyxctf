@@ -190,8 +190,8 @@ router.get("/:id", async ctx => {
                         <summary>meets</summary>
                         <label for="meet-lookup">select a meet to view</label>
 
-                        <select name="meet_id" id="meet-lookup">
-                            <option value=""></option>
+                        <select name="meet_id" id="meet-lookup" _="on change set #meet-viewer's innerHTML to ''">
+                            <option value="">(select a meet)</option>
 
                             ${
                                 await (async () => {
