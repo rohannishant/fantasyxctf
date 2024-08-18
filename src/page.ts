@@ -18,10 +18,33 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 			mark.underclassman {
 				color: white;
 				background-color: green;
+				font-family: monospace;
 			}
 			mark.upperclassman {
 				color: white;
 				background-color: purple;
+				font-family: monospace;
+			}
+
+			.firstplace {
+				background-color: gold;
+				color: black;
+			}
+			.secondplace {
+				background-color: silver;
+				color: black;
+			}
+			.thirdplace {
+				background-color: sandybrown;
+				color: black;
+			}
+			.better {
+				background-color: seagreen;
+				color: white;
+			}
+			.worse {
+				background-color: firebrick;
+				color: white;
 			}
 		</style>
 	</head>

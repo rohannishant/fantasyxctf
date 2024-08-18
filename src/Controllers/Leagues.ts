@@ -115,6 +115,7 @@ router.post("/meetinfo", async ctx => {
                     <tr>
                         <th>place</th>
                         <th>name</th>
+                        <th>year</th>
                         <th>prev.</th>
                         <th>finish</th>
                         <th>score</th>
@@ -123,11 +124,12 @@ router.post("/meetinfo", async ctx => {
                         query.map((race, i) =>
                             html`
                             <tr>
-                                <td>${(i + 1).toString()}</td>
+                                <td class="${i == 0 ? "firstplace" : i == 1 ? "secondplace" : i == 2 ? "thirdplace" : ";"}">${(i + 1).toString()}</td>
                                 <td>${race.athlete_name}</td>
+                                <td>${athleteYear(race.athlete_year)}</td>
                                 <td>${race.previous_minutes.toString()}:${race.previous_seconds.toString().padStart(2,"0")}</td>
                                 <td>${race.finish_minutes.toString()}:${race.finish_seconds.toString().padStart(2,"0")}</td>
-                                <td>${race.score.toString()}</td>
+                                <td class="${race.score >= 100 ? "better" : "worse"}">${race.score.toString()}</td>
                             </tr>
                             `
                         )
