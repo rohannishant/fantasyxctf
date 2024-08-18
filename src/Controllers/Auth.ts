@@ -71,7 +71,7 @@ router.post("/login", async ctx => {
 	const password = credentials.get("password") as string;
 
 	if (username != null && password != null) {
-		username = username.toLowerCase();
+		username = username.toLowerCase().trim();
 
 		const query = await sql`SELECT pass from users WHERE username=${username};`;
 		if (query.length > 0 &&
@@ -133,7 +133,7 @@ router.post("/signup", async ctx => {
 	const password = credentials.get("password") as string;
 	const confirmPassword = credentials.get("confirmpassword") as string;
 	if (username != null) {
-		username = username.toLowerCase();
+		username = username.toLowerCase().trim();
 	}
 
 	const re = /^[a-zA-Z0-9_]+$/;

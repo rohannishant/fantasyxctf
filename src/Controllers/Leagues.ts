@@ -105,7 +105,6 @@ router.post("/meetinfo", async ctx => {
     const formData = await ctx.request.body.formData();
     if (ctx.state.authenticated && formData.has("meet_id") && (formData.get("meet_id") as FormDataEntryValue).toString().length > 0) {
         const query: (raceTable & athleteTable)[] = await sql`SELECT * FROM races INNER JOIN athletes ON races.athlete_id = athletes.athlete_id WHERE races.meet_id = ${formData.get("meet_id")?.toString()} ORDER BY races.score DESC;`
-        console.log(query);
 
         if (query.length > 0) {
             ctx.response.body = html`
