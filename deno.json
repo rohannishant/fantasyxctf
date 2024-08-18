@@ -10,6 +10,8 @@
 	},
 	"tasks": {
 		"run": "deno run -A ./src/main.ts",
-		"migrate": "goose -dir migrations postgres \"postgres://rohan:password@localhost:5432/fantasyxctf\" up"
+		"migrate": "goose -dir migrations postgres \"postgres://rohan:password@localhost:5432/fantasyxctf\" up",
+		"migrate_down": "goose -dir migrations postgres \"postgres://rohan:password@localhost:5432/fantasyxctf\" down",
+		"migrate_status": "goose -dir migrations postgres \"postgres://rohan:password@localhost:5432/fantasyxctf\" status"
 	}
 }

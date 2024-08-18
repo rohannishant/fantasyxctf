@@ -3,10 +3,7 @@ import { Router } from "@oak/oak/router";
 
 import IndexController from "./Controllers/Index.ts";
 import AuthController, { AuthMiddleware } from "./Controllers/Auth.ts";
-
-import sql from "./db.ts";
-console.log(await sql`SELECT user_id, username from users;`);
-
+import LeaguesController from "./Controllers/Leagues.ts";
 
 const router = new Router();
 function useController(path: string, r: Router) {
@@ -15,6 +12,7 @@ function useController(path: string, r: Router) {
 }
 useController("", IndexController);
 useController("", AuthController);
+useController("/leagues", LeaguesController);
 
 const app = new Application();
 app.use(AuthMiddleware);

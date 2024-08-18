@@ -6,7 +6,10 @@ const router = new Router();
 router.get("/", ctx => {
 	ctx.response.body = page("fantasyxctf",
 		html`
-			<p>Welcome!</p>
+			${ ctx.state.authenticated ? 
+			html`<a class="button" href="/leagues">view leagues</a>`
+			:
+			html`<p>please login to play fantasy</p>`}
 		`,
 		ctx.state, true
 	);

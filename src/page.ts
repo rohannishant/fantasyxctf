@@ -14,6 +14,15 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 			ul#auth_options > li {
 				margin: 1em;
 			}
+
+			mark.underclassman {
+				color: white;
+				background-color: green;
+			}
+			mark.upperclassman {
+				color: white;
+				background-color: purple;
+			}
 		</style>
 	</head>
 	<body>
@@ -22,7 +31,7 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 			${state.authenticated ? 
 				html`<p>logged in as ${state.username}</p>
 				<ul id="auth_options">
-				<li><a href="/logout">log out</a></li>
+				<li><a class="button" href="/logout">log out</a></li>
 				<li><button hx-get="/account/delete_form" hx-target="#form-container" hx-swap="innerHTML">delete account</button></li>
 				</ul>` :
 
