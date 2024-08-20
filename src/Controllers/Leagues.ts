@@ -151,6 +151,47 @@ router.post("/meetinfo", async ctx => {
     }
 });
 
+router.post("/athleteinfo", async ctx => {
+    const formData = await ctx.request.body.formData();
+    if (ctx.state.authenticated && formData.has("athlete_id") && (formData.get("athlete_id") as FormDataEntryValue).toString().length > 0) {
+        const query: (raceTable & meetTable)[] = await sql`SELECT * FROM races INNER JOIN meets ON races.meet_id = meets.meet_id WHERE athlete_id = ${formData.get("athlete_id")?.toString()};`
+
+        if (query.length > 0) {
+            ctx.response.body = html`
+            <figure>
+                <table>
+                    <caption>${(await sql`SELECT athlete_name FROM athletes WHERE athlete_id=${formData.get("athlete_id")}`)[0].athlete_name}</caption>
+                    <tr>
+                        <th>meet</th>
+                        <th>prev.</th>
+                        <th>finish</th>
+                        <th>score</th>
+                    </tr>
+                    ${
+                        query.map((race, i) =>
+                            html`
+                            <tr>
+                                <td>${race.meet_name}</td>
+                                <td>${race.previous_minutes.toString()}:${race.previous_seconds.toString().padStart(2, "0")}</td>
+                                <td>${race.finish_minutes.toString()}:${race.finish_seconds.toString().padStart(2, "0")}</td>
+                                <td class="${race.score >= 100 ? "better" : "worse"}">${race.score.toString()}</td>
+                            </tr>
+                            `
+                        )
+                    }
+                </table>
+                </figure>
+            `;
+        }
+        else {
+            ctx.response.body = html`<p style="color: red">could not get athlete info (try checking later)</p>`;
+        }
+    }
+    else {
+        ctx.response.body = html`<p style="color: red">could not get athlete info</p>`;
+    }
+});
+
 router.get("/:id", async ctx => {
     const query: (leagueTable & seasonTable)[] = await sql`SELECT league_name, season_name, seasons.season_id FROM leagues INNER JOIN seasons ON leagues.season_id = seasons.season_id WHERE league_id=${ctx.params.id};`;
     if (ctx.state.authenticated &&
@@ -216,6 +257,31 @@ router.get("/:id", async ctx => {
                                 return html`<p style="color: red">no athletes yet? try again later</p>`
                             })()
                         }
+
+                        <div class="notice">
+                            <label for="athlete-lookup">select a athlete to view in detail</label>
+                            <select name="athlete_id" id="athlete-lookup" _="on change set #athlete-viewer's innerHTML to ''">
+                                <option value="">(select a athlete)</option>
+
+                                ${
+                                    await (async () => {
+                                        const queryAths: athleteTable[] = await sql`SELECT * FROM athletes WHERE season_id = ${query[0].season_id};`;
+                                        
+                                        if (queryAths.length > 0) {
+                                            return queryAths.map(ath =>
+                                                html`
+                                                    <option value="${ath.athlete_id.toString()}">${ath.athlete_name}</option>
+                                                `
+                                            )
+                                        }
+
+                                        return html``
+                                    })()
+                                }
+                            </select>
+                            <button hx-post="/leagues/athleteinfo" hx-target="#athlete-viewer" hx-swap="innerHTML" hx-include="#athlete-lookup">view athlete detailed stats</button>
+                            <div id="athlete-viewer"></div>
+                        </div>
                 </details>
 
                 <details>
@@ -227,10 +293,10 @@ router.get("/:id", async ctx => {
 
                             ${
                                 await (async () => {
-                                    const query: meetTable[] = await sql`SELECT meet_id, meet_name FROM meets WHERE season_id IN (SELECT season_id FROM leagues WHERE league_id = ${ctx.params.id});`;
+                                    const queryMeets: meetTable[] = await sql`SELECT meet_id, meet_name FROM meets WHERE season_id = ${query[0].season_id};`;
                                     
-                                    if (query.length > 0) {
-                                        return query.map(meet =>
+                                    if (queryMeets.length > 0) {
+                                        return queryMeets.map(meet =>
                                             html`
                                                 <option value="${meet.meet_id.toString()}">${meet.meet_name}</option>
                                             `
