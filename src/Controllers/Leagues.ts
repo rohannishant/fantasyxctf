@@ -39,6 +39,11 @@ interface raceTable {
     meet_id: number
 }
 
+interface scoreSelect {
+    total_score: number,
+    avg_score: number,
+}
+
 const router = new Router();
 router.get("/", async ctx => {
 	if (ctx.state.authenticated) {
@@ -110,7 +115,7 @@ router.post("/meetinfo", async ctx => {
             ctx.response.body = html`
             <figure>
                 <table>
-                    <caption>${(await sql`SELECT meet_name FROM meets WHERE meet_id=${formData.get("meet_id")}`)[0].meet_name}</caption
+                    <caption>${(await sql`SELECT meet_name FROM meets WHERE meet_id=${formData.get("meet_id")}`)[0].meet_name}</caption>
                     <tr>
                         <th>place</th>
                         <th>name</th>
@@ -171,19 +176,44 @@ router.get("/:id", async ctx => {
                 </details>
                 <details>
                     <summary>athletes</summary>
-                    <ol>
                         ${
                             await (async () => {
-                                const query: athleteTable[] = await sql`SELECT * FROM athletes WHERE season_id = ${ctx.params.id}`;
-                                if (query.length > 0) {
-                                    return query.map(athlete => html`
-                                            <li>${athlete.athlete_name} ${athleteYear(athlete.athlete_year)}</li>
-                                        `)
+                                const query_athletes: (athleteTable & scoreSelect)[] = await sql`
+                                    WITH scores AS (SELECT athlete_id, SUM(races.score) total_score, AVG(races.score) avg_score FROM races GROUP BY athlete_id)
+                                    SELECT athletes.athlete_id, athletes.athlete_name, athletes.athlete_year, COALESCE(scores.total_score, 0) total_score, COALESCE(scores.avg_score, 0) avg_score FROM athletes
+                                    LEFT JOIN scores ON athletes.athlete_id = scores.athlete_id
+                                    WHERE athletes.season_id = ${query[0].season_id}
+                                    ORDER BY total_score DESC;
+                                `;
+
+                                if (query_athletes.length > 0) {
+                                    return html`
+                                        <table>
+                                            <tr>
+                                                <th>place</th>
+                                                <th>name</th>
+                                                <th>year</th>
+                                                <th>avg.</th>
+                                                <th>total</th>
+                                            </tr>
+                                            ${
+                                                query_athletes.map((athlete, i) => html`
+                                                <tr>
+                                                    <td class="${i == 0 ? "firstplace" : i == 1 ? "secondplace" : i == 2 ? "thirdplace" : ";"}">${(i + 1).toString()}</td>
+                                                    <td>${athlete.athlete_name}</td>
+                                                    <td>${athleteYear(athlete.athlete_year)}</td>
+                                                    <td>${athlete.avg_score.toFixed(2)}</td>
+                                                    <td>${athlete.total_score.toFixed(2)}</td>
+                                                </tr>
+                                                `)
+                                            }
+                                            <caption>${query[0].season_name}</caption>
+                                        </table>
+                                    `
                                 }
-                                return html`<li>no athletes..?</li>`
+                                return html`<p style="color: red">no athletes yet? try again later</p>`
                             })()
                         }
-                    </ol>
                 </details>
 
                 <details>
