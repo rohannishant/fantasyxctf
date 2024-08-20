@@ -188,27 +188,29 @@ router.get("/:id", async ctx => {
 
                                 if (query_athletes.length > 0) {
                                     return html`
-                                        <table>
-                                            <tr>
-                                                <th>place</th>
-                                                <th>name</th>
-                                                <th>year</th>
-                                                <th>avg.</th>
-                                                <th>total</th>
-                                            </tr>
-                                            ${
-                                                query_athletes.map((athlete, i) => html`
+                                        <figure>
+                                            <table>
                                                 <tr>
-                                                    <td class="${i == 0 ? "firstplace" : i == 1 ? "secondplace" : i == 2 ? "thirdplace" : ";"}">${(i + 1).toString()}</td>
-                                                    <td>${athlete.athlete_name}</td>
-                                                    <td>${athleteYear(athlete.athlete_year)}</td>
-                                                    <td>${athlete.avg_score.toFixed(2)}</td>
-                                                    <td>${athlete.total_score.toFixed(2)}</td>
+                                                    <th>place</th>
+                                                    <th>name</th>
+                                                    <th>year</th>
+                                                    <th>avg.</th>
+                                                    <th>total</th>
                                                 </tr>
-                                                `)
-                                            }
-                                            <caption>${query[0].season_name}</caption>
-                                        </table>
+                                                ${
+                                                    query_athletes.map((athlete, i) => html`
+                                                    <tr>
+                                                        <td class="${i == 0 ? "firstplace" : i == 1 ? "secondplace" : i == 2 ? "thirdplace" : ";"}">${(i + 1).toString()}</td>
+                                                        <td>${athlete.athlete_name}</td>
+                                                        <td>${athleteYear(athlete.athlete_year)}</td>
+                                                        <td>${athlete.avg_score.toFixed(2)}</td>
+                                                        <td>${athlete.total_score.toFixed(2)}</td>
+                                                    </tr>
+                                                    `)
+                                                }
+                                                <caption>${query[0].season_name}</caption>
+                                            </table>
+                                        </figure>
                                     `
                                 }
                                 return html`<p style="color: red">no athletes yet? try again later</p>`
