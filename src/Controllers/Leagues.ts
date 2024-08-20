@@ -152,7 +152,7 @@ router.post("/meetinfo", async ctx => {
 });
 
 router.get("/:id", async ctx => {
-    const query: (leagueTable & seasonTable)[] = await sql`SELECT league_name, season_name FROM leagues INNER JOIN seasons ON leagues.season_id = seasons.season_id WHERE league_id=${ctx.params.id};`;
+    const query: (leagueTable & seasonTable)[] = await sql`SELECT league_name, season_name, seasons.season_id FROM leagues INNER JOIN seasons ON leagues.season_id = seasons.season_id WHERE league_id=${ctx.params.id};`;
     if (ctx.state.authenticated &&
         query.length > 0 &&
         ((await sql`SELECT FROM leaguemembers WHERE user_id = ${ctx.state.user_id} AND league_id = ${ctx.params.id}`) as any[])
