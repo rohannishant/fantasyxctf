@@ -106,6 +106,12 @@ function athleteYear(year: number) {
     return html`<mark>??</mark>`;
 }
 
+interface standingsQuery {
+    user_id: number,
+    username: string,
+    total_score: number
+}
+
 router.post("/meetinfo", async ctx => {
     const formData = await ctx.request.body.formData();
     if (ctx.state.authenticated && formData.has("meet_id") && (formData.get("meet_id") as FormDataEntryValue).toString().length > 0) {
@@ -207,13 +213,54 @@ router.get("/:id", async ctx => {
 
                 <details>
                     <summary>league standings</summary>
-                    <ol>
-                        ${((await sql`SELECT user_id, username from users WHERE user_id IN (SELECT user_id FROM leaguemembers WHERE league_id = ${ctx.params.id});`) as any[])
-                           .map(
-                                (user) => html`<li>${user.username}</li>`
-                           )
-                        }
-                    </ol>
+                    ${
+                        await (async () => {
+                            const query_standings: standingsQuery[] = await sql`
+                            WITH picks AS 
+                            (
+                                SELECT picks_id, user_id, COALESCE(race1.score, 0) score1, COALESCE(race2.score, 0) score2, COALESCE(race3.score, 0) score3 from meetpicks
+                                LEFT JOIN races race1 ON meetpicks.pick1 = race1.athlete_id AND meetpicks.meet_id = race1.meet_id
+                                LEFT JOIN races race2 ON meetpicks.pick2 = race2.athlete_id AND meetpicks.meet_id = race2.meet_id
+                                LEFT JOIN races race3 ON meetpicks.pick3 = race3.athlete_id AND meetpicks.meet_id = race3.meet_id
+                            )
+                            SELECT users.user_id, users.username,
+                            COALESCE(SUM(picks.score1), 0) + COALESCE(SUM(picks.score2), 0) + COALESCE(SUM(picks.score3), 0) total_score 
+                            FROM users
+                            LEFT JOIN picks ON users.user_id = picks.user_id
+                            WHERE users.user_id IN (SELECT user_id FROM leaguemembers WHERE league_id = ${ctx.params.id})
+                            GROUP BY users.user_id
+                            ORDER BY total_score DESC;;
+                            `;
+
+                            if (query_standings.length > 0) {
+                                return html`
+                                <figure>
+                                    <table>
+                                        <caption>standings for ${query[0].league_name}</caption>
+                                        <tr>
+                                            <th>place</th>
+                                            <th>username</th>
+                                            <th>score</th>
+                                        </tr>
+                                        ${
+                                            query_standings.map((user, i) => 
+                                                html`
+                                                <tr>
+                                                    <td class="${i == 0 ? "firstplace" : i == 1 ? "secondplace" : i == 2 ? "thirdplace" : ";"}">${(i + 1).toString()}</td>
+                                                    <td>${user.username}</td>
+                                                    <td>${user.total_score.toFixed(2)}</td>
+                                                </tr>
+                                                `
+                                            )
+                                        }
+                                    </table>
+                                </figure>
+                                `
+                            }
+
+                            return html`<p style="color: red">could not get league standings. please report this issue to rohan</p>`;
+                        })()
+                    }
                 </details>
                 <details>
                     <summary>athletes</summary>
@@ -244,7 +291,7 @@ router.get("/:id", async ctx => {
                                                         <td class="${i == 0 ? "firstplace" : i == 1 ? "secondplace" : i == 2 ? "thirdplace" : ";"}">${(i + 1).toString()}</td>
                                                         <td>${athlete.athlete_name}</td>
                                                         <td>${athleteYear(athlete.athlete_year)}</td>
-                                                        <td>${athlete.avg_score.toFixed(2)}</td>
+                                                        <td class="${athlete.avg_score >= 100 ? "better" : "worse"}">${athlete.avg_score.toFixed(2)}</td>
                                                         <td>${athlete.total_score.toFixed(2)}</td>
                                                     </tr>
                                                     `)
