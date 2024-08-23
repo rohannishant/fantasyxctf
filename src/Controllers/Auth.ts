@@ -66,7 +66,7 @@ const deleteForm = html`
 `;
 
 async function cookieAuth(ctx: Context, username: string, password: string) {
-	await ctx.cookies.set("auth", encodeBase64(username + "\n" + password), {httpOnly: true, secure: false});
+	await ctx.cookies.set("auth", encodeBase64(username + "\n" + password), {httpOnly: true, secure: false, sameSite: "strict"});
 }
 
 const router = new Router();
@@ -123,9 +123,10 @@ router.post("/login", async ctx => {
 				${loginForm}`, ctx.state, false);
 		}
 	}
-	catch {
+	catch(error) {
 		ctx.response.status = Status.Teapot;
 		ctx.response.body = "error";
+		console.error(error);
 	}
 });
 
@@ -225,9 +226,10 @@ router.post("/signup", async ctx => {
 				${signupForm}`, ctx.state, false);
 		}
 	}
-	catch {
+	catch(error) {
 		ctx.response.status = Status.Teapot;
 		ctx.response.body = "error";
+		console.error(error);
 	}
 });
 

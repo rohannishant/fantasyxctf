@@ -29,6 +29,7 @@ app.use(router.allowedMethods());
 
 const args = parseArgs(Deno.args);
 const port = typeof args.port == "number"  ? args.port : 3000;
+app.state.prod = args.prod == true ? true : false;
 
 app.listen({ port: port });
 console.log(`listening on http://localhost:${port}`)

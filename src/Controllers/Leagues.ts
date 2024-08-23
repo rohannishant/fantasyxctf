@@ -12,7 +12,8 @@ interface leagueTable {
 
 interface seasonTable {
     season_id: number,
-    season_name: string
+    season_name: string,
+    current_meet: number | null
 }
 
 interface athleteTable {
@@ -42,6 +43,16 @@ interface raceTable {
 interface scoreSelect {
     total_score: number,
     avg_score: number,
+}
+
+interface meetPicks {
+    picks_id: number,
+    user_id: number,
+    meet_id: number, 
+    league_id: number,
+    pick1: number | null,
+    pick2: number | null,
+    pick3: number | null
 }
 
 const router = new Router();
@@ -200,6 +211,58 @@ router.post("/athleteinfo", async ctx => {
     }
 });
 
+router.post("/:id/meetpicks", async ctx => {
+    try {
+        const formData = await ctx.request.body.formData();        
+
+        const query1: (leagueTable & seasonTable)[] = await sql`SELECT * from leagues INNER JOIN seasons ON leagues.season_id = seasons.season_id WHERE leagues.league_id = ${ctx.params.id}`;
+        
+        if (ctx.state.authenticated &&
+            (await sql`SELECT FROM leaguemembers WHERE league_id = ${ctx.params.id} AND user_id = ${ctx.state.user_id};`).length > 0 &&
+            query1.length > 0 && query1[0].current_meet != null && formData.has("pick1") && formData.has("pick2") && formData.has("pick3")) {
+            const pickCount = [formData.get("pick1")?.toString(), formData.get("pick2")?.toString(), formData.get("pick3")?.toString()]
+            .filter(pick => pick != "null").length;
+
+            const pick1 = formData.get("pick1") == "null" ? null : (formData.get("pick1") as string).toString();
+            const pick2 = formData.get("pick2") == "null" ? null : (formData.get("pick2") as string).toString();
+            const pick3 = formData.get("pick3") == "null" ? null : (formData.get("pick3") as string).toString();
+
+            const query2: athleteTable[] = await sql`
+                SELECT * from athletes
+                WHERE (
+                    athlete_id = ${pick1} OR
+                    athlete_id = ${pick2} OR
+                    athlete_id = ${pick3}
+                )
+                AND season_id = ${query1[0].season_id}
+            `;
+            
+            if (query2.length == pickCount) {
+
+                await sql`DELETE from meetpicks WHERE meet_id = ${query1[0].current_meet} AND user_id = ${ctx.state.user_id};`
+                await sql`INSERT into meetpicks (user_id, meet_id, league_id, pick1, pick2, pick3)
+                VALUES (${ctx.state.user_id}, ${query1[0].current_meet}, ${ctx.params.id}, ${pick1}, ${pick2}, ${pick3})`;
+
+                ctx.response.body = html`<p style="color: green">
+                    saved ${pickCount.toString()} pick(s) <br/>
+                    ${query2.map(athlete => athlete.athlete_name).join(", ")}
+                </p>`;
+            }
+            else {
+                ctx.response.body = html`<p style="color: red">error saving picks, make sure there are no duplicates</p>`;
+            }
+        }
+        else {
+            ctx.response.body = html`<p style="color: red">an error occured</p>`;
+        }
+    }
+    catch(error) {
+        ctx.response.status = Status.Teapot;
+        ctx.response.body = "error";
+        console.error(error);
+    }
+})
+
 router.get("/:id", async ctx => {
     const query: (leagueTable & seasonTable)[] = await sql`SELECT league_name, season_name, seasons.season_id FROM leagues INNER JOIN seasons ON leagues.season_id = seasons.season_id WHERE league_id=${ctx.params.id};`;
     if (ctx.state.authenticated &&
@@ -212,6 +275,51 @@ router.get("/:id", async ctx => {
                 <a href="/leagues">back to leagues</a>
                 <h2>${query[0].league_name}</h2>
                 <p>season: ${query[0].season_name}</p>
+
+                ${
+                    await (async () => {
+                        const currentMeetQuery: meetTable[] = await sql`SELECT meets.* FROM seasons INNER JOIN meets ON meets.meet_id = seasons.current_meet WHERE seasons.season_id = ${query[0].season_id};`;
+                        const athletes: athleteTable[] = await sql`SELECT * from athletes WHERE season_id = ${query[0].season_id}`;
+
+                        if (currentMeetQuery.length > 0) {
+                            const currentMeetPicks: meetPicks[] = await sql`
+                                SELECT * from meetpicks WHERE user_id = ${ctx.state.user_id}
+                                AND meet_id = ${currentMeetQuery[0].meet_id};
+                            `;
+
+                            const athletePicker = (no: number) => html`
+                            <label for="athlete-pick${no.toString()}">pick ${no.toString()}</label>
+                            <select name="pick${no.toString()}" id="athlete-pick${no.toString()}">
+                                <option value="null">(pick an athlete)</option>
+
+                                ${athletes.map(athlete => html`
+                                    <option value="${athlete.athlete_id.toString()}" ${currentMeetPicks.length > 0 && athlete.athlete_id == (currentMeetPicks[0] as any)[`pick${no}`] ? "selected" : ""}>${athlete.athlete_name}</option>
+                                        `)}
+                            </select>
+                            `;
+
+                            return html`
+                            <details>
+                                <summary>upcoming meet</summary>
+                                <h3>${currentMeetQuery[0].meet_name}</h3>
+                                <div id="pick-messenger"><p>make 3 unique picks for the upcoming meet</p></div>
+                                <form hx-post="/leagues/${ctx.params.id}/meetpicks" hx-target="#pick-messenger" hx-swap="innerHTML">
+                                    <fieldset>
+                                        <legend>picks</legend>
+                                        ${athletePicker(1)}
+                                        ${athletePicker(2)}
+                                        ${athletePicker(3)}
+                                    </fieldset>
+
+                                    <button type="submit">submit</button>
+                                </form>
+                            </details>
+                            `;
+                        }
+
+                        return html``;
+                    })()
+                }
 
                 <details>
                     <summary>league standings</summary>
@@ -308,9 +416,9 @@ router.get("/:id", async ctx => {
                         }
 
                         <div class="notice">
-                            <label for="athlete-lookup">select a athlete to view in detail</label>
+                            <label for="athlete-lookup">select an athlete to view in detail</label>
                             <select name="athlete_id" id="athlete-lookup" _="on change set #athlete-viewer's innerHTML to ''">
-                                <option value="">(select a athlete)</option>
+                                <option value="">(select an athlete)</option>
 
                                 ${
                                     await (async () => {
