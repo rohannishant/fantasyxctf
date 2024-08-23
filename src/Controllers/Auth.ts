@@ -17,6 +17,11 @@ const loginForm = html`
 	<label for="login-password">password:</label>
 	<input type="password" id="login-password" name="password" required maxlength="20"></input>
 
+	<div id="captcha-login"></div>
+	<script>
+		turnstile.render("#captcha-login", {sitekey: "0x4AAAAAAAh4SI_cO-K320Qt"});
+	</script>
+
 	<input type="submit" value="submit"></input>
 </form>
 </div>
@@ -36,6 +41,11 @@ const signupForm = html`
 
 	<label for="signup-password-confirm">confirm password:</label>
 	<input type="password" id="signup-password-confirm" name="confirmpassword" required maxlength="20"></input>
+
+	<div id="captcha-signup"></div>
+	<script>
+		turnstile.render("#captcha-signup", {sitekey: "0x4AAAAAAAh4SI_cO-K320Qt"});
+	</script>
 
 	<input type="submit" value="submit"></input>
 </form>
@@ -66,11 +76,27 @@ router.get("/login_form", ctx => {
 
 router.post("/login", async ctx => {
 	const credentials = await ctx.request.body.formData();
+	let captcha = false;
+
+	if (credentials.has("cf-turnstile-response")) {
+		const bodyFormData = new FormData();
+		bodyFormData.set("secret", "0x4AAAAAAAh4SHUa_OQNitDF_v8DId12O78");
+		bodyFormData.set("response", (credentials.get("cf-turnstile-response") as string).toString());
+		bodyFormData.set("remoteip", ctx.request.ip);
+		bodyFormData.set("sitekey", "0x4AAAAAAAh4SI_cO-K320Qt");
+
+		const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+			method: "POST",
+			body: bodyFormData
+		});
+		captcha = (await response.json()).success;
+	}
 
 	let username = credentials.get("username") as string;
 	const password = credentials.get("password") as string;
 
-	if (username != null && password != null) {
+	if (captcha &&
+		username != null && password != null) {
 		username = username.toLowerCase().trim();
 
 		const query = await sql`SELECT pass from users WHERE username=${username};`;
@@ -128,6 +154,21 @@ router.post("/account/delete", async ctx => {
 
 router.post("/signup", async ctx => {
 	const credentials = await ctx.request.body.formData();
+	let captcha = false;
+
+	if (credentials.has("cf-turnstile-response")) {
+		const bodyFormData = new FormData();
+		bodyFormData.set("secret", "0x4AAAAAAAh4SHUa_OQNitDF_v8DId12O78");
+		bodyFormData.set("response", (credentials.get("cf-turnstile-response") as string).toString());
+		bodyFormData.set("remoteip", ctx.request.ip);
+		bodyFormData.set("sitekey", "0x4AAAAAAAh4SI_cO-K320Qt");
+
+		const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+			method: "POST",
+			body: bodyFormData
+		});
+		captcha = (await response.json()).success;
+	}
 
 	let username = credentials.get("username") as string;
 	const password = credentials.get("password") as string;
@@ -152,7 +193,7 @@ router.post("/signup", async ctx => {
 			<a href="/">go back home</a>
 			${signupForm}`, ctx.state, false);
 	}
-	else if (username != null && password != null && confirmPassword != null && !username.includes("\n") && !password.includes("\n") &&
+	else if (captcha && username != null && password != null && confirmPassword != null && !username.includes("\n") && !password.includes("\n") &&
 	username.length > 0 && username.length <= 20 && password.length > 0 && password.length <= 20) {
 		
 		if (password == confirmPassword) {
