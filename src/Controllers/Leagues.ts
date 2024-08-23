@@ -55,7 +55,7 @@ router.get("/", async ctx => {
                 <ul>
                     ${
                         await (async () => {
-                            const query: any[] = await sql`SELECT * from leagues WHERE league_id NOT IN (SELECT league_id FROM leaguemembers WHERE user_id = ${ctx.state.user_id});`;
+                            const query: leagueTable[] = await sql`SELECT * from leagues WHERE league_id NOT IN (SELECT league_id FROM leaguemembers WHERE user_id = ${ctx.state.user_id});`;
     
                             if (query.length > 0) {                   
                                 return query.map((league: leagueTable) =>
@@ -71,7 +71,7 @@ router.get("/", async ctx => {
                 <ul>
                     ${
                         await (async () => {
-                            const query: any[] = await sql`SELECT * from leagues WHERE league_id IN (SELECT league_id FROM leaguemembers WHERE user_id = ${ctx.state.user_id});`;
+                            const query: leagueTable[] = await sql`SELECT * from leagues WHERE league_id IN (SELECT league_id FROM leaguemembers WHERE user_id = ${ctx.state.user_id});`;
     
                             if (query.length > 0) {                   
                                 return query.map((league: leagueTable) =>
@@ -115,13 +115,13 @@ interface standingsQuery {
 router.post("/meetinfo", async ctx => {
     const formData = await ctx.request.body.formData();
     if (ctx.state.authenticated && formData.has("meet_id") && (formData.get("meet_id") as FormDataEntryValue).toString().length > 0) {
-        const query: (raceTable & athleteTable)[] = await sql`SELECT * FROM races INNER JOIN athletes ON races.athlete_id = athletes.athlete_id WHERE races.meet_id = ${formData.get("meet_id")?.toString()} ORDER BY races.score DESC;`
+        const query: (raceTable & athleteTable)[] = await sql`SELECT * FROM races INNER JOIN athletes ON races.athlete_id = athletes.athlete_id WHERE races.meet_id = ${(formData.get("meet_id") as FormDataEntryValue).toString()} ORDER BY races.score DESC;`
 
         if (query.length > 0) {
             ctx.response.body = html`
             <figure>
                 <table>
-                    <caption>${(await sql`SELECT meet_name FROM meets WHERE meet_id=${formData.get("meet_id")}`)[0].meet_name}</caption>
+                    <caption>${(await sql`SELECT meet_name FROM meets WHERE meet_id=${(formData.get("meet_id") as FormDataEntryValue).toString()}`)[0].meet_name}</caption>
                     <tr>
                         <th>place</th>
                         <th>name</th>
@@ -160,14 +160,15 @@ router.post("/meetinfo", async ctx => {
 router.post("/athleteinfo", async ctx => {
     const formData = await ctx.request.body.formData();
     if (ctx.state.authenticated && formData.has("athlete_id") && (formData.get("athlete_id") as FormDataEntryValue).toString().length > 0) {
-        const query: (raceTable & meetTable)[] = await sql`SELECT * FROM races INNER JOIN meets ON races.meet_id = meets.meet_id WHERE athlete_id = ${formData.get("athlete_id")?.toString()};`
-
+        const query: (raceTable & meetTable)[] = await sql`SELECT * FROM races INNER JOIN meets ON races.meet_id = meets.meet_id WHERE athlete_id = ${(formData.get("athlete_id") as FormDataEntryValue).toString()};`;
+        
         if (query.length > 0) {
             ctx.response.body = html`
             <figure>
                 <table>
-                    <caption>${(await sql`SELECT athlete_name FROM athletes WHERE athlete_id=${formData.get("athlete_id")}`)[0].athlete_name}</caption>
+                    <caption>${(await sql`SELECT athlete_name FROM athletes WHERE athlete_id=${(formData.get("athlete_id") as FormDataEntryValue).toString()}`)[0].athlete_name}</caption>
                     <tr>
+                        <th>#</th>
                         <th>meet</th>
                         <th>prev.</th>
                         <th>finish</th>
@@ -177,6 +178,7 @@ router.post("/athleteinfo", async ctx => {
                         query.map((race, i) =>
                             html`
                             <tr>
+                                <td>${(i + 1).toString()}</td>
                                 <td>${race.meet_name}</td>
                                 <td>${race.previous_minutes.toString()}:${race.previous_seconds.toString().padStart(2, "0")}</td>
                                 <td>${race.finish_minutes.toString()}:${race.finish_seconds.toString().padStart(2, "0")}</td>
@@ -202,7 +204,7 @@ router.get("/:id", async ctx => {
     const query: (leagueTable & seasonTable)[] = await sql`SELECT league_name, season_name, seasons.season_id FROM leagues INNER JOIN seasons ON leagues.season_id = seasons.season_id WHERE league_id=${ctx.params.id};`;
     if (ctx.state.authenticated &&
         query.length > 0 &&
-        ((await sql`SELECT FROM leaguemembers WHERE user_id = ${ctx.state.user_id} AND league_id = ${ctx.params.id}`) as any[])
+        ((await sql`SELECT FROM leaguemembers WHERE user_id = ${ctx.state.user_id} AND league_id = ${ctx.params.id}`) as [])
         .length > 0
     ) {
         ctx.response.body = page(`league: ${query[0].league_name}`,

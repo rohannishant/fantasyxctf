@@ -6,7 +6,6 @@ import AuthController, { AuthMiddleware } from "./Controllers/Auth.ts";
 import LeaguesController from "./Controllers/Leagues.ts";
 import { Context } from "jsr:@oak/oak@^16.1.0/context";
 import { parseArgs } from "@std/cli/parse-args";
-import { parse } from "jsr:@std/path@0.223/parse";
 
 const router = new Router();
 function useController(path: string, r: Router) {
@@ -19,7 +18,7 @@ useController("/leagues", LeaguesController);
 
 const app = new Application();
 
-app.use(async (ctx: Context, next: () => any) => {
+app.use(async (ctx: Context, next: () => void) => {
 	ctx.response.headers.set("Cache-Control", "no-store");
 
 	await next();
