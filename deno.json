@@ -10,7 +10,7 @@
 		"useTabs": true
 	},
 	"tasks": {
-		"run": "deno run --allow-net --allow-env ./src/main.ts",
+		"run": "deno run --allow-net --allow-env --allow-read ./src/main.ts",
 		"migrate": "goose -dir migrations postgres \"postgres://rohan:password@localhost:5432/fantasyxctf\" up",
 		"migrate_down": "goose -dir migrations postgres \"postgres://rohan:password@localhost:5432/fantasyxctf\" down",
 		"migrate_status": "goose -dir migrations postgres \"postgres://rohan:password@localhost:5432/fantasyxctf\" status"

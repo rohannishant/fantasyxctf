@@ -1,6 +1,7 @@
 import { Router } from "@oak/oak/router";
 import { page } from "../page.ts";
 import { html } from "@mark/html";
+import { send } from "jsr:@oak/oak@^16.1.0/send";
 
 const router = new Router();
 router.get("/", ctx => {
@@ -19,6 +20,10 @@ router.get("/robots.txt", ctx => {
 	ctx.response.body = 
 `User-Agent: *
 Disallow: /`;
+})
+
+router.get("/favicon.png", async ctx => {
+	await send(ctx, "./icon.png", {root: "./public"});
 })
 
 export default router;
