@@ -91,7 +91,7 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 		<h1>(DEMO) fantasy xc</h1>
 		${ showAuth ? html`<div class="notice">
 			${state.authenticated ? 
-				html`<p>logged in as ${state.username}</p>
+				html`<p>logged in as ${state.username}${state.user_role == null ? "" : html` <mark class="role_${state.user_role}">${state.user_role}</mark>`}</p>
 				<ul id="auth_options">
 				<li><a class="button" href="/logout">log out</a></li>
 				<li><button hx-get="/account/delete_form" hx-target="#form-container" hx-swap="innerHTML">delete account</button></li>
@@ -108,7 +108,7 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 		${raw(body())}
 		<footer>
 			<p>
-				fantasyxctf alpha v1.1.0<br/>
+				fantasyxctf alpha v1.1.1<br/>
 				made by Rohan Nishant
 			</p>
 		</footer>

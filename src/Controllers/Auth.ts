@@ -243,13 +243,14 @@ export async function AuthMiddleware(ctx: Context, next: () => any) {
 		const [username, password] = b64decoded.split("\n");
 
 		if (username.length > 0 && password != undefined) {
-			const query = await sql`SELECT user_id, pass from users WHERE username=${username};`;
+			const query = await sql`SELECT user_id, pass, user_role from users WHERE username=${username};`;
 
 			if (query.length > 0 &&
 				query[0].pass == password) {
 				ctx.state.authenticated = true;
 				ctx.state.username = username;
 				ctx.state.user_id = query[0].user_id;
+				ctx.state.user_role = query[0].user_role;
 			}
 			else {
 				ctx.state.authenticated = false;
