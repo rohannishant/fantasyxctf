@@ -40,13 +40,50 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 				background-color: sandybrown;
 				color: black;
 			}
-			.better {
+			.reallygood {
 				background-color: seagreen;
 				color: white;
 			}
-			.worse {
+			.good {
+				background-color: lightgreen;
+				color: black;
+			}
+			.mid {
+				background-color: khaki;
+				color: black;
+			}
+			.bad {
+				background-color: lightcoral;
+				color: black
+			}
+			.reallybad {
 				background-color: firebrick;
 				color: white;
+			}
+
+			mark.role_OG {
+				background-image: linear-gradient(darkorchid, dodgerblue);
+				color: white;
+			}
+			mark.role_DEV {
+				background-image: linear-gradient(darkslategrey, lightskyblue);
+				color: white;
+			}
+
+			mark.sexm {
+				background-color: blue;
+				color: white;
+				font-family: monospace;
+			}
+			mark.sexf {
+				background-color: deeppink;
+				color:white;
+				font-family: monospace;
+			}
+			mark.sexunknown {
+				background-color: dimgrey;
+				color: white;
+				font-family: monospace;
 			}
 		</style>
 	</head>
@@ -71,7 +108,7 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 		${raw(body())}
 		<footer>
 			<p>
-				fantasyxctf alpha v1.0.0<br/>
+				fantasyxctf alpha v1.1.0<br/>
 				made by Rohan Nishant
 			</p>
 		</footer>

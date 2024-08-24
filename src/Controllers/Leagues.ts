@@ -20,7 +20,8 @@ interface athleteTable {
     athlete_id: number,
     athlete_name: string,
     athlete_year: number,
-    season_id: number
+    season_id: number,
+    sex: string
 }
 
 interface meetTable {
@@ -43,6 +44,7 @@ interface raceTable {
 interface scoreSelect {
     total_score: number,
     avg_score: number,
+    place: number
 }
 
 interface meetPicks {
@@ -117,16 +119,40 @@ function athleteYear(year: number) {
     return html`<mark>??</mark>`;
 }
 
+function scoreColorClass(score: number) {
+    if (score >= 90) return "reallygood";
+    if (score >= 75) return "good";
+    if (score >= 60) return "mid";
+    if (score >= 50) return "bad";
+    return "reallybad";
+}
+
+function placeColorClass(place: number) {
+    if (place == 1) return "firstplace";
+    if (place == 2) return "secondplace";
+    if (place == 3) return "thirdplace";
+    return "";
+}
+
+function sexColorClass(sex: string) {
+    if (sex == "M") return "sexm";
+    if (sex == "F") return "sexf";
+
+    return "sexunknown";
+}
+
 interface standingsQuery {
     user_id: number,
     username: string,
-    total_score: number
+    total_score: number,
+    place: number,
+    user_role: string | null
 }
 
 router.post("/meetinfo", async ctx => {
     const formData = await ctx.request.body.formData();
     if (ctx.state.authenticated && formData.has("meet_id") && (formData.get("meet_id") as FormDataEntryValue).toString().length > 0) {
-        const query: (raceTable & athleteTable)[] = await sql`SELECT * FROM races INNER JOIN athletes ON races.athlete_id = athletes.athlete_id WHERE races.meet_id = ${(formData.get("meet_id") as FormDataEntryValue).toString()} ORDER BY races.score DESC;`
+        const query: (raceTable & athleteTable & { place: number} )[] = await sql`SELECT * , rank() OVER ( ORDER BY races.score DESC ) place FROM races INNER JOIN athletes ON races.athlete_id = athletes.athlete_id WHERE races.meet_id = ${(formData.get("meet_id") as FormDataEntryValue).toString()};`
 
         if (query.length > 0) {
             ctx.response.body = html`
@@ -136,21 +162,23 @@ router.post("/meetinfo", async ctx => {
                     <tr>
                         <th>place</th>
                         <th>name</th>
+                        <th>sex</th>
                         <th>year</th>
                         <th>prev.</th>
                         <th>finish</th>
                         <th>score</th>
                     </tr>
                     ${
-                        query.map((race, i) =>
+                        query.map(race =>
                             html`
                             <tr>
-                                <td class="${i == 0 ? "firstplace" : i == 1 ? "secondplace" : i == 2 ? "thirdplace" : ";"}">${(i + 1).toString()}</td>
+                                <td class="${placeColorClass(race.place)}">${(race.place).toString()}</td>
                                 <td>${race.athlete_name}</td>
+                                <td><mark class="${sexColorClass(race.sex)}">${race.sex}</mark></td>
                                 <td>${athleteYear(race.athlete_year)}</td>
                                 <td>${race.previous_minutes.toString()}:${race.previous_seconds.toString().padStart(2,"0")}</td>
                                 <td>${race.finish_minutes.toString()}:${race.finish_seconds.toString().padStart(2,"0")}</td>
-                                <td class="${race.score >= 100 ? "better" : "worse"}">${race.score.toString()}</td>
+                                <td class="${scoreColorClass(race.score)}">${race.score.toString()}</td>
                             </tr>
                             `
                         )
@@ -193,7 +221,7 @@ router.post("/athleteinfo", async ctx => {
                                 <td>${race.meet_name}</td>
                                 <td>${race.previous_minutes.toString()}:${race.previous_seconds.toString().padStart(2, "0")}</td>
                                 <td>${race.finish_minutes.toString()}:${race.finish_seconds.toString().padStart(2, "0")}</td>
-                                <td class="${race.score >= 100 ? "better" : "worse"}">${race.score.toString()}</td>
+                                <td class="${scoreColorClass(race.score)}">${race.score.toString()}</td>
                             </tr>
                             `
                         )
@@ -332,14 +360,20 @@ router.get("/:id", async ctx => {
                                 LEFT JOIN races race1 ON meetpicks.pick1 = race1.athlete_id AND meetpicks.meet_id = race1.meet_id
                                 LEFT JOIN races race2 ON meetpicks.pick2 = race2.athlete_id AND meetpicks.meet_id = race2.meet_id
                                 LEFT JOIN races race3 ON meetpicks.pick3 = race3.athlete_id AND meetpicks.meet_id = race3.meet_id
+                            ),
+                            scores as (
+                                SELECT users.user_id, users.username, users.user_role,
+                                COALESCE(SUM(picks.score1), 0) + COALESCE(SUM(picks.score2), 0) + COALESCE(SUM(picks.score3), 0) total_score 
+                                FROM users
+                                LEFT JOIN picks ON users.user_id = picks.user_id
+                                WHERE users.user_id IN (SELECT user_id FROM leaguemembers WHERE league_id = ${ctx.params.id})
+                                GROUP BY users.user_id
+                                ORDER BY total_score DESC
                             )
-                            SELECT users.user_id, users.username,
-                            COALESCE(SUM(picks.score1), 0) + COALESCE(SUM(picks.score2), 0) + COALESCE(SUM(picks.score3), 0) total_score 
-                            FROM users
-                            LEFT JOIN picks ON users.user_id = picks.user_id
-                            WHERE users.user_id IN (SELECT user_id FROM leaguemembers WHERE league_id = ${ctx.params.id})
-                            GROUP BY users.user_id
-                            ORDER BY total_score DESC;;
+                            SELECT scores.*,
+                                rank() OVER (ORDER BY scores.total_score DESC) place
+                            from scores;
+                            ;
                             `;
 
                             if (query_standings.length > 0) {
@@ -353,11 +387,12 @@ router.get("/:id", async ctx => {
                                             <th>score</th>
                                         </tr>
                                         ${
-                                            query_standings.map((user, i) => 
+                                            query_standings.map(user => 
                                                 html`
                                                 <tr>
-                                                    <td class="${i == 0 ? "firstplace" : i == 1 ? "secondplace" : i == 2 ? "thirdplace" : ";"}">${(i + 1).toString()}</td>
-                                                    <td>${user.username}</td>
+                                                    <td class="${placeColorClass(user.place)}">
+                                                    ${(user.place).toString()}</td>
+                                                    <td>${user.username}${user.user_role == null ? "" : html` <mark class="role_${user.user_role}">${user.user_role}</mark>`}</td>
                                                     <td>${user.total_score.toFixed(2)}</td>
                                                 </tr>
                                                 `
@@ -377,11 +412,14 @@ router.get("/:id", async ctx => {
                         ${
                             await (async () => {
                                 const query_athletes: (athleteTable & scoreSelect)[] = await sql`
-                                    WITH scores AS (SELECT athlete_id, SUM(races.score) total_score, AVG(races.score) avg_score FROM races GROUP BY athlete_id)
-                                    SELECT athletes.athlete_id, athletes.athlete_name, athletes.athlete_year, COALESCE(scores.total_score, 0) total_score, COALESCE(scores.avg_score, 0) avg_score FROM athletes
-                                    LEFT JOIN scores ON athletes.athlete_id = scores.athlete_id
-                                    WHERE athletes.season_id = ${query[0].season_id}
-                                    ORDER BY total_score DESC;
+                                    WITH scores AS (SELECT athlete_id, SUM(races.score) total_score, AVG(races.score) avg_score FROM races GROUP BY athlete_id),
+                                    athleteScores AS (
+                                        SELECT athletes.athlete_id, athletes.athlete_name, athletes.athlete_year, athletes.sex, COALESCE(scores.total_score, 0) total_score, COALESCE(scores.avg_score, 0) avg_score FROM athletes
+                                        LEFT JOIN scores ON athletes.athlete_id = scores.athlete_id
+                                        WHERE athletes.season_id = ${query[0].season_id}
+                                    )
+                                    SELECT athleteScores.*, rank() OVER ( ORDER BY total_score DESC ) place
+                                    FROM athleteScores;
                                 `;
 
                                 if (query_athletes.length > 0) {
@@ -391,17 +429,19 @@ router.get("/:id", async ctx => {
                                                 <tr>
                                                     <th>place</th>
                                                     <th>name</th>
+                                                    <th>sex</th>
                                                     <th>year</th>
                                                     <th>avg.</th>
                                                     <th>total</th>
                                                 </tr>
                                                 ${
-                                                    query_athletes.map((athlete, i) => html`
+                                                    query_athletes.map(athlete => html`
                                                     <tr>
-                                                        <td class="${i == 0 ? "firstplace" : i == 1 ? "secondplace" : i == 2 ? "thirdplace" : ";"}">${(i + 1).toString()}</td>
+                                                        <td class="${placeColorClass(athlete.place)}">${(athlete.place).toString()}</td>
                                                         <td>${athlete.athlete_name}</td>
+                                                        <td><mark class="${sexColorClass(athlete.sex)}">${athlete.sex}</mark></td>
                                                         <td>${athleteYear(athlete.athlete_year)}</td>
-                                                        <td class="${athlete.avg_score >= 100 ? "better" : "worse"}">${athlete.avg_score.toFixed(2)}</td>
+                                                        <td class="${scoreColorClass(athlete.avg_score)}">${athlete.avg_score.toFixed(2)}</td>
                                                         <td>${athlete.total_score.toFixed(2)}</td>
                                                     </tr>
                                                     `)
