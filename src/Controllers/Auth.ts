@@ -7,49 +7,50 @@ import { page } from "../page.ts";
 import { Context } from "jsr:@oak/oak@^16.1.0/context";
 
 const loginForm = html`
-<div class="notice">
 <form action="/login" method="post">
-	<p>login</p>
-	
-	<label for="login-username">username:</label>
-	<input type="text" id="login-username" name="username" required maxlength="20"></input> 
-	
-	<label for="login-password">password:</label>
-	<input type="password" id="login-password" name="password" required maxlength="20"></input>
+	<fieldset>
+		<legend>login</legend>
+		
+		<label for="login-username">username:</label>
+		<input type="text" id="login-username" name="username" required maxlength="20"></input> 
+		
+		<label for="login-password">password:</label>
+		<input type="password" id="login-password" name="password" required maxlength="20"></input>
 
-	<div id="captcha-login"></div>
-	<script>
-		turnstile.render("#captcha-login", {sitekey: "0x4AAAAAAAh4SI_cO-K320Qt"});
-	</script>
+		<div id="captcha-login"></div>
+		<script>
+			turnstile.render("#captcha-login", {sitekey: "0x4AAAAAAAh4SI_cO-K320Qt"});
+		</script>
 
-	<input type="submit" value="submit"></input>
+		<input type="submit" value="submit"></input>
+	</fieldset>
 </form>
-</div>
 `;
 
 const signupForm = html`
-<div class="notice">
 <form action="/signup" method="post">
-	<p>sign up</p>
-	<p>max 20 characters for username and password. username must contain no spaces or special characters except underscore.</p>
-	
-	<label for="signup-username">username:</label>
-	<input type="text" id="signup-username" name="username" required maxlength="20"></input> 
-	
-	<label for="signup-password">password:</label>
-	<input type="password" id="signup-password" name="password" required maxlength="20"></input>
 
-	<label for="signup-password-confirm">confirm password:</label>
-	<input type="password" id="signup-password-confirm" name="confirmpassword" required maxlength="20"></input>
+	<fieldset>
+		<legend>sign up</legend>
+		<p>max 20 characters for username and password. username must contain no spaces or special characters except underscore.</p>
+		
+		<label for="signup-username">username:</label>
+		<input type="text" id="signup-username" name="username" required maxlength="20"></input> 
+		
+		<label for="signup-password">password:</label>
+		<input type="password" id="signup-password" name="password" required maxlength="20"></input>
 
-	<div id="captcha-signup"></div>
-	<script>
-		turnstile.render("#captcha-signup", {sitekey: "0x4AAAAAAAh4SI_cO-K320Qt"});
-	</script>
+		<label for="signup-password-confirm">confirm password:</label>
+		<input type="password" id="signup-password-confirm" name="confirmpassword" required maxlength="20"></input>
 
-	<input type="submit" value="submit"></input>
+		<div id="captcha-signup"></div>
+		<script>
+			turnstile.render("#captcha-signup", {sitekey: "0x4AAAAAAAh4SI_cO-K320Qt"});
+		</script>
+
+		<input type="submit" value="submit"></input>
+	</fieldset>
 </form>
-</div>
 `;
 
 const deleteForm = html`
