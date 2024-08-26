@@ -317,6 +317,18 @@ const scoringInformation = html`
 </details>
 `;
 
+const rulesInformation = html`
+<details>
+    <summary>rules</summary>
+    <ul>
+        <li>every week, pick 3 unique athletes to score points for you</li>
+        <li>athletes score points based on their previous best time (see more information about scoring below)</li>
+        <li>points score by athletes you pick add up to your total</li>
+        <li>whoever has the highest total by the end of the season wins</li>
+    </ul>
+</details>
+`;
+
 router.get("/:id", async ctx => {
     const query: (leagueTable & seasonTable)[] = await sql`SELECT league_name, season_name, seasons.season_id FROM leagues INNER JOIN seasons ON leagues.season_id = seasons.season_id WHERE league_id=${ctx.params.id};`;
     if (ctx.state.authenticated &&
@@ -386,6 +398,7 @@ router.get("/:id", async ctx => {
                                 LEFT JOIN races race1 ON meetpicks.pick1 = race1.athlete_id AND meetpicks.meet_id = race1.meet_id
                                 LEFT JOIN races race2 ON meetpicks.pick2 = race2.athlete_id AND meetpicks.meet_id = race2.meet_id
                                 LEFT JOIN races race3 ON meetpicks.pick3 = race3.athlete_id AND meetpicks.meet_id = race3.meet_id
+                                WHERE meetpicks.league_id = ${ctx.params.id}
                             ),
                             scores as (
                                 SELECT users.user_id, users.username, users.user_role,
@@ -534,6 +547,7 @@ router.get("/:id", async ctx => {
                         <div id="meet-viewer"></div>
                 </details>
 
+                ${rulesInformation}
                 ${scoringInformation}
             `,
             ctx.state,
