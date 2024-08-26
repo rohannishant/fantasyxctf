@@ -20,10 +20,14 @@ const loginForm = html`
 
 		<div id="captcha-login"></div>
 		<script>
-			turnstile.render("#captcha-login", {sitekey: "0x4AAAAAAAh4SI_cO-K320Qt"});
+			turnstile.render("#captcha-login", {sitekey: "0x4AAAAAAAh4SI_cO-K320Qt",
+			callback: () => {
+				document.querySelector("#login-submit").disabled = false;
+			}
+			});
 		</script>
 
-		<input type="submit" value="submit"></input>
+		<input id="login-submit" type="submit" value="submit" disabled></input>
 	</fieldset>
 </form>
 `;
@@ -46,10 +50,14 @@ const signupForm = html`
 
 		<div id="captcha-signup"></div>
 		<script>
-			turnstile.render("#captcha-signup", {sitekey: "0x4AAAAAAAh4SI_cO-K320Qt"});
+			turnstile.render("#captcha-signup", {sitekey: "0x4AAAAAAAh4SI_cO-K320Qt",
+				callback: () => {
+					document.querySelector("#signup-submit").disabled = false;
+				}
+			});
 		</script>
 
-		<input type="submit" value="submit"></input>
+		<input id="signup-submit" type="submit" value="submit" disabled></input>
 	</fieldset>
 </form>
 `;
