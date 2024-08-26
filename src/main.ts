@@ -7,6 +7,8 @@ import LeaguesController from "./Controllers/Leagues.ts";
 import { Context } from "jsr:@oak/oak@^16.1.0/context";
 import { parseArgs } from "@std/cli/parse-args";
 
+import infoLog from "./infoLog.ts";
+
 const router = new Router();
 function useController(path: string, r: Router) {
 	router.use(path, r.routes());
@@ -32,5 +34,5 @@ const port = typeof args.port == "number"  ? args.port : 3000;
 app.state.prod = args.prod == true ? true : false;
 
 app.listen({ port: port });
-console.log(`listening on http://localhost:${port}`)
+infoLog(`listening on http://localhost:${port}`)
 

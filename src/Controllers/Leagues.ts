@@ -3,6 +3,7 @@ import { page } from "../page.ts";
 import { html } from "@mark/html";
 import sql from "../db.ts";
 import { Status } from "jsr:@oak/commons@0.11/status";
+import infoLog from "../infoLog.ts";
 
 interface leagueTable {
     league_id: number,
@@ -275,19 +276,23 @@ router.post("/:id/meetpicks", async ctx => {
                     saved ${pickCount.toString()} pick(s) <br/>
                     ${query2.map(athlete => athlete.athlete_name).join(", ")}
                 </p>`;
+                infoLog(`"${ctx.state.username}" (${ctx.request.ip}) made their picks. nice!`);
             }
             else {
                 ctx.response.body = html`<p style="color: red">error saving picks, make sure there are no duplicates</p>`;
+                infoLog(`"${ctx.state.username}" (${ctx.request.ip}) made invalid picks`);
             }
         }
         else {
             ctx.response.body = html`<p style="color: red">an error occured</p>`;
+            infoLog(`${ctx.request.ip} tried making meet picks, either unauthenticated to league, no current meet, or invalid form data`);
         }
     }
     catch(error) {
         ctx.response.status = Status.Teapot;
         ctx.response.body = "error";
         console.error(error);
+        infoLog(`${ctx.request.ip} attempted to submit meet picks, possible invalid form data`)
     }
 })
 
@@ -550,10 +555,12 @@ router.get("/join/:id", async ctx => {
         }
         ctx.response.status = Status.SeeOther;
         ctx.response.headers.set("Location", "/leagues");
+        infoLog(`"${ctx.state.username}" (${ctx.request.ip}) joined league "${query[0].league_name}", welcome!`);
     }
     else {
         ctx.response.status = Status.SeeOther;
         ctx.response.headers.set("Location", "/");
+        infoLog(`${ctx.request.ip} tried joining a league, either unauthenticated, or invalid league`);
     }
 });
 

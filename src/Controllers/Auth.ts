@@ -5,6 +5,7 @@ import { encodeBase64, decodeBase64 } from "@std/encoding";
 import { Status } from "jsr:@oak/commons@0.11/status";
 import { page } from "../page.ts";
 import { Context } from "jsr:@oak/oak@^16.1.0/context";
+import infoLog from "../infoLog.ts";
 
 const loginForm = html`
 <form action="/login" method="post">
@@ -107,6 +108,7 @@ router.post("/login", async ctx => {
 				await cookieAuth(ctx, username, password);
 				ctx.response.headers.set("Location", "/");
 				ctx.response.status = Status.SeeOther;
+				infoLog(`${ctx.request.ip} logged in as ${username}`);
 			}
 			else {
 				ctx.response.status = Status.Unauthorized;
@@ -114,6 +116,7 @@ router.post("/login", async ctx => {
 					<h3 style="color: red">login failed, check username or password</h3>
 					<a href="/">go back home</a>
 					${loginForm}`, ctx.state, false);
+				infoLog(`${ctx.request.ip} failed to login as ${username}`);
 			}
 		}
 		else {
@@ -122,12 +125,14 @@ router.post("/login", async ctx => {
 				<h3 style="color: red">login failed, please try again</h3>
 				<a href="/">go back home</a>
 				${loginForm}`, ctx.state, false);
+			infoLog(`${ctx.request.ip} tried to login, possibly without username, password, or captcha`);
 		}
 	}
 	catch(error) {
 		ctx.response.status = Status.Teapot;
 		ctx.response.body = "error";
 		console.error(error);
+		infoLog(`${ctx.request.ip} tried to login, possibly without submitting form data`);
 	}
 });
 
@@ -194,6 +199,7 @@ router.post("/signup", async ctx => {
 				<p style="color: red">sorry, your username contained invalid characters</p>
 				<a href="/">go back home</a>
 				${signupForm}`, ctx.state, false);
+				infoLog(`${ctx.request.ip} tried signing up with invalid username "${username}"`);
 		}
 		else if (username != null && (await sql`SELECT from users WHERE username=${username}`).length > 0) {
 			ctx.response.status = Status.BadRequest;
@@ -201,6 +207,7 @@ router.post("/signup", async ctx => {
 				<p style="color: red">sorry, that username already exists</p>
 				<a href="/">go back home</a>
 				${signupForm}`, ctx.state, false);
+				infoLog(`${ctx.request.ip} tried signing up with existing username "${username}"`);
 		}
 		else if (captcha && username != null && password != null && confirmPassword != null && !username.includes("\n") && !password.includes("\n") &&
 		username.length > 0 && username.length <= 20 && password.length > 0 && password.length <= 20) {
@@ -210,6 +217,7 @@ router.post("/signup", async ctx => {
 				await cookieAuth(ctx, username, password);
 				ctx.response.headers.set("Location", "/");
 				ctx.response.status = Status.SeeOther;
+				infoLog(`${ctx.request.ip} signed up as "${username}"`);
 			}
 			else {
 				ctx.response.status = Status.BadRequest;
@@ -217,6 +225,7 @@ router.post("/signup", async ctx => {
 					<p style="color: red">sorry, your passwords did not match</p>
 					<a href="/">go back home</a>
 					${signupForm}`, ctx.state, false);
+				infoLog(`${ctx.request.ip} tried signing up as  without matching passwords`);
 			}
 		}
 		else {
@@ -225,12 +234,14 @@ router.post("/signup", async ctx => {
 				<p style="color: red">failed to create account, please make sure you entered everything correctly</p>
 				<a href="/">go back home</a>
 				${signupForm}`, ctx.state, false);
+				infoLog(`${ctx.request.ip} tried signing up with invalid input`);
 		}
 	}
 	catch(error) {
 		ctx.response.status = Status.Teapot;
 		ctx.response.body = "error";
 		console.error(error);
+		infoLog(`${ctx.request.ip} tried to sign up, possibly without form data`);
 	}
 });
 
