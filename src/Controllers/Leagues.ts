@@ -291,6 +291,27 @@ router.post("/:id/meetpicks", async ctx => {
     }
 })
 
+const scoringInformation = html`
+<details>
+    <summary>scoring information</summary>
+    <p>
+        <code>s = 100 * (p / f) ^ 10</code>
+        <ul>
+            <li>s = score</li>
+            <li>p = previous time</li>
+            <li>f = finish time</li>
+        </ul>
+
+        see <a href="https://www.desmos.com/calculator/se7klkmjx8">this desmos graph</a> for more details
+        <br />
+        <ul>
+            <li>previous time based on season best</li>
+            <li>if first race of season, previous time will be last season's best</li>
+        </ul>
+    </p>
+</details>
+`;
+
 router.get("/:id", async ctx => {
     const query: (leagueTable & seasonTable)[] = await sql`SELECT league_name, season_name, seasons.season_id FROM leagues INNER JOIN seasons ON leagues.season_id = seasons.season_id WHERE league_id=${ctx.params.id};`;
     if (ctx.state.authenticated &&
@@ -507,6 +528,8 @@ router.get("/:id", async ctx => {
                         <button hx-post="/leagues/meetinfo" hx-target="#meet-viewer" hx-swap="innerHTML" hx-include="#meet-lookup">view meet stats</button>
                         <div id="meet-viewer"></div>
                 </details>
+
+                ${scoringInformation}
             `,
             ctx.state,
             true
