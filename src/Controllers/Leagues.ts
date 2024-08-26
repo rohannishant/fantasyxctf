@@ -68,7 +68,7 @@ router.get("/", async ctx => {
                 <ul>
                     ${
                         await (async () => {
-                            const query: leagueTable[] = await sql`SELECT * from leagues WHERE league_id NOT IN (SELECT league_id FROM leaguemembers WHERE user_id = ${ctx.state.user_id});`;
+                            const query: leagueTable[] = await sql`SELECT * from leagues WHERE joinable=TRUE AND league_id NOT IN (SELECT league_id FROM leaguemembers WHERE user_id = ${ctx.state.user_id});`;
     
                             if (query.length > 0) {                   
                                 return query.map((league: leagueTable) =>
@@ -520,7 +520,7 @@ router.get("/:id", async ctx => {
 
 router.get("/join/:id", async ctx => {
     if (ctx.state.authenticated) {
-        const query: leagueTable[] = await sql`SELECT * from leagues WHERE league_id=${ctx.params.id}`;
+        const query: leagueTable[] = await sql`SELECT * from leagues WHERE league_id=${ctx.params.id} AND joinable=TRUE;`;
         if (query.length > 0
             && (await sql`SELECT from leaguemembers WHERE user_id = ${ctx.state.user_id} AND league_id = ${ctx.params.id}`).length == 0) {
                 await sql`INSERT INTO leaguemembers (user_id, league_id) VALUES (${ctx.state.user_id}, ${ctx.params.id})`;

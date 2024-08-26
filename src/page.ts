@@ -88,7 +88,7 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 		</style>
 	</head>
 	<body>
-		<h1>(DEMO) fantasy xc</h1>
+		<h1>fantasy xc</h1>
 		${ showAuth ? html`<div class="notice">
 			${state.authenticated ? 
 				html`<p>logged in as ${state.username}${state.user_role == null ? "" : html` <mark class="role_${state.user_role}">${state.user_role}</mark>`}</p>
@@ -108,7 +108,7 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 		${raw(body())}
 		<footer>
 			<p>
-				fantasyxctf alpha v1.1.2<br/>
+				fantasyxctf alpha v1.1.3<br/>
 				made by Rohan Nishant
 			</p>
 		</footer>
