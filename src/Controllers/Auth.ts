@@ -166,10 +166,12 @@ router.post("/account/delete", async ctx => {
 				<p style="color: green;">your account has been deleted</p>
 				<a href="/">go back home</a>
 			`, ctx.state, false);
+		infoLog(`${ctx.request.ip} deleted account "${ctx.state.username}"`);
 	}
 	else {
 		ctx.response.headers.set("Location", "/");
 		ctx.response.status = Status.SeeOther;
+		infoLog(`${ctx.request.ip} tried to delete account without authenticating`);
 	}
 });
 

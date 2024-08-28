@@ -99,16 +99,17 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 
 				html`<p>you are not logged in</p>
 				<ul id="auth_options">
-				<li><button hx-get="/login_form" hx-target="#form-container" hx-swap="innerHTML">log in</button></li>
-				<li><button hx-get="/signup_form" hx-target="#form-container" hx-swap="innerHTML">sign up</a></li>
+				<li><button hx-get="/login_form" hx-target="#form-container" hx-swap="innerHTML" hx-indicator="#auth-loading">log in</button></li>
+				<li><button hx-get="/signup_form" hx-target="#form-container" hx-swap="innerHTML" hx-indicator="#auth-loading">sign up</a></li>
 				</ul>`
 			}
+			<span id="#auth-loading" class="htmx-indicator">loading...</span>
 			<div id="form-container"></div>
 		</div>` : ""}
 		${raw(body())}
 		<footer>
 			<p>
-				fantasyxctf alpha v1.1.7<br/>
+				fantasyxctf alpha v1.1.8<br/>
 				made by Rohan Nishant
 			</p>
 		</footer>

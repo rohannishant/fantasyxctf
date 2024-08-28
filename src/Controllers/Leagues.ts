@@ -369,7 +369,8 @@ router.get("/:id", async ctx => {
                                 <summary>upcoming meet</summary>
                                 <h3>${currentMeetQuery[0].meet_name}</h3>
                                 <div id="pick-messenger"><p>make 3 unique picks for the upcoming meet</p></div>
-                                <form hx-post="/leagues/${ctx.params.id}/meetpicks" hx-target="#pick-messenger" hx-swap="innerHTML">
+                                <span id="meet-picker-loading" class="htmx-indicator">submitting...</span>
+                                <form hx-post="/leagues/${ctx.params.id}/meetpicks" hx-target="#pick-messenger" hx-swap="innerHTML" hx-indicator="#meet-picker-loading">
                                     <fieldset>
                                         <legend>picks</legend>
                                         ${athletePicker(1)}
@@ -515,7 +516,8 @@ router.get("/:id", async ctx => {
                                     })()
                                 }
                             </select>
-                            <button hx-post="/leagues/athleteinfo" hx-target="#athlete-viewer" hx-swap="innerHTML" hx-include="#athlete-lookup">view athlete detailed stats</button>
+                            <button hx-post="/leagues/athleteinfo" hx-target="#athlete-viewer" hx-swap="innerHTML" hx-include="#athlete-lookup" hx-indicator="#athlete-viewer-loading">view athlete detailed stats</button>
+                            <span id="athlete-viewer-loading" class="htmx-indicator">loading...</span>
                             <div id="athlete-viewer"></div>
                         </div>
                 </details>
@@ -543,7 +545,8 @@ router.get("/:id", async ctx => {
                                 })()
                             }
                         </select>
-                        <button hx-post="/leagues/meetinfo" hx-target="#meet-viewer" hx-swap="innerHTML" hx-include="#meet-lookup">view meet stats</button>
+                        <button hx-post="/leagues/meetinfo" hx-target="#meet-viewer" hx-swap="innerHTML" hx-include="#meet-lookup" hx-indicator="#meet-viewer-loading"> view meet stats</button>
+                        <span id="meet-viewer-loading" class="htmx-indicator">loading...</span>
                         <div id="meet-viewer"></div>
                 </details>
 
