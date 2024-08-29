@@ -81,6 +81,7 @@ async function cookieAuth(ctx: Context, username: string, password: string) {
 
 const router = new Router();
 router.get("/login_form", ctx => {
+	ctx.response.headers.set("Cache-Control", "public, max-age=3600, immutable")
 	ctx.response.body = loginForm();
 });
 
@@ -151,10 +152,12 @@ router.get("/logout", async ctx => {
 });
 
 router.get("/signup_form", ctx => {
+	ctx.response.headers.set("Cache-Control", "public, max-age=3600, immutable")
 	ctx.response.body = signupForm();
 })
 
 router.get("/account/delete_form", ctx => {
+	ctx.response.headers.set("Cache-Control", "public, max-age=3600, immutable")
 	ctx.response.body = deleteForm();
 });
 

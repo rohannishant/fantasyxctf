@@ -17,12 +17,16 @@ router.get("/", ctx => {
 });
 
 router.get("/robots.txt", ctx => {
+	ctx.response.headers.set("Cache-Control", "public, max-age=3600, immutable")
+
 	ctx.response.body = 
 `User-Agent: *
 Disallow: /`;
 })
 
 router.get("/favicon.png", async ctx => {
+	ctx.response.headers.set("Cache-Control", "public, max-age=3600, immutable")
+
 	await send(ctx, "./icon.png", {root: "./public"});
 })
 

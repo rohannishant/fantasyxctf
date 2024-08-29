@@ -58,6 +58,16 @@ interface meetPicks {
     pick3: number | null
 }
 
+interface picksQuery {
+    meet_name: string,
+    pick1name: string | null,
+    pick2name: string | null,
+    pick3name: string | null,
+    pick1score: number,
+    pick2score: number,
+    pick3score: number,
+}
+
 const router = new Router();
 router.get("/", async ctx => {
 	if (ctx.state.authenticated) {
@@ -179,7 +189,7 @@ router.post("/meetinfo", async ctx => {
                                 <td>${athleteYear(race.athlete_year)}</td>
                                 <td>${race.previous_minutes.toString()}:${race.previous_seconds.toString().padStart(2,"0")}</td>
                                 <td>${race.finish_minutes.toString()}:${race.finish_seconds.toString().padStart(2,"0")}</td>
-                                <td class="${scoreColorClass(race.score)}">${race.score.toString()}</td>
+                                <td class="${scoreColorClass(race.score)}">${race.score.toFixed(2)}</td>
                             </tr>
                             `
                         )
@@ -325,6 +335,7 @@ const rulesInformation = html`
         <li>athletes score points based on their previous best time (see more information about scoring below)</li>
         <li>points score by athletes you pick add up to your total</li>
         <li>whoever has the highest total by the end of the season wins</li>
+        <li>this is all just for fun, any gambling with real money is not endorsed and at own risk</li>
     </ul>
 </details>
 `;
@@ -336,11 +347,54 @@ router.get("/:id", async ctx => {
         ((await sql`SELECT FROM leaguemembers WHERE user_id = ${ctx.state.user_id} AND league_id = ${ctx.params.id}`) as [])
         .length > 0
     ) {
+        const query_standings: standingsQuery[] = await sql`
+        WITH picks AS 
+        (
+            SELECT picks_id, user_id, COALESCE(race1.score, 0) score1, COALESCE(race2.score, 0) score2, COALESCE(race3.score, 0) score3 from meetpicks
+            LEFT JOIN races race1 ON meetpicks.pick1 = race1.athlete_id AND meetpicks.meet_id = race1.meet_id
+            LEFT JOIN races race2 ON meetpicks.pick2 = race2.athlete_id AND meetpicks.meet_id = race2.meet_id
+            LEFT JOIN races race3 ON meetpicks.pick3 = race3.athlete_id AND meetpicks.meet_id = race3.meet_id
+            WHERE meetpicks.league_id = ${ctx.params.id}
+        ),
+        scores as (
+            SELECT users.user_id, users.username, users.user_role,
+            COALESCE(SUM(picks.score1), 0) + COALESCE(SUM(picks.score2), 0) + COALESCE(SUM(picks.score3), 0) total_score 
+            FROM users
+            LEFT JOIN picks ON users.user_id = picks.user_id
+            WHERE users.user_id IN (SELECT user_id FROM leaguemembers WHERE league_id = ${ctx.params.id})
+            GROUP BY users.user_id
+            ORDER BY total_score DESC
+        )
+        SELECT scores.*,
+            rank() OVER (ORDER BY scores.total_score DESC) place
+        from scores;
+        ;
+        `;
+        
+        const query_athletes: (athleteTable & scoreSelect)[] = await sql`
+        WITH scores AS (SELECT athlete_id, SUM(races.score) total_score, AVG(races.score) avg_score FROM races GROUP BY athlete_id),
+        athleteScores AS (
+            SELECT athletes.athlete_id, athletes.athlete_name, athletes.athlete_year, athletes.sex, COALESCE(scores.total_score, 0) total_score, COALESCE(scores.avg_score, 0) avg_score FROM athletes
+            LEFT JOIN scores ON athletes.athlete_id = scores.athlete_id
+            WHERE athletes.season_id = ${query[0].season_id}
+        )
+        SELECT athleteScores.*, rank() OVER ( ORDER BY total_score DESC ) place
+        FROM athleteScores;
+        `;
+
+        const queryMeets: meetTable[] = await sql`SELECT meet_id, meet_name FROM meets WHERE season_id = ${query[0].season_id};`;
+
         ctx.response.body = page(`league: ${query[0].league_name}`,
             html`
                 <a href="/leagues">back to leagues</a>
                 <h2>${query[0].league_name}</h2>
-                <p>season: ${query[0].season_name}</p>
+                <div class="notice">
+                    <ul>
+                        <li>season: "${query[0].season_name}"</li>
+                        <li>${query_standings.length.toString()} members joined</li>
+                        <li>${query_athletes.length.toString()} athletes have scored a total of ${query_athletes.reduce((x, s) => x + s.total_score, 0).toFixed(2)} points in ${queryMeets.length.toString()} meet(s)</li>
+                    </ul>
+                </div>
 
                 ${
                     await (async () => {
@@ -359,7 +413,7 @@ router.get("/:id", async ctx => {
                                 <option value="null">(pick an athlete)</option>
 
                                 ${athletes.map(athlete => html`
-                                    <option value="${athlete.athlete_id.toString()}" ${currentMeetPicks.length > 0 && athlete.athlete_id == (currentMeetPicks[0] as any)[`pick${no}`] ? "selected" : ""}>${athlete.athlete_name}</option>
+                                    <option value="${athlete.athlete_id.toString()}" ${currentMeetPicks.length > 0 && athlete.athlete_id == (currentMeetPicks[0] as any)[`pick${no}`] ? "selected" : ""}>${athlete.athlete_name} (${athlete.sex}, ${athleteYear(athlete.athlete_year)})</option>
                                         `)}
                             </select>
                             `;
@@ -389,35 +443,69 @@ router.get("/:id", async ctx => {
                 }
 
                 <details>
-                    <summary>league standings</summary>
+                    <summary>my picks</summary>
                     ${
                         await (async () => {
-                            const query_standings: standingsQuery[] = await sql`
-                            WITH picks AS 
-                            (
-                                SELECT picks_id, user_id, COALESCE(race1.score, 0) score1, COALESCE(race2.score, 0) score2, COALESCE(race3.score, 0) score3 from meetpicks
-                                LEFT JOIN races race1 ON meetpicks.pick1 = race1.athlete_id AND meetpicks.meet_id = race1.meet_id
-                                LEFT JOIN races race2 ON meetpicks.pick2 = race2.athlete_id AND meetpicks.meet_id = race2.meet_id
-                                LEFT JOIN races race3 ON meetpicks.pick3 = race3.athlete_id AND meetpicks.meet_id = race3.meet_id
-                                WHERE meetpicks.league_id = ${ctx.params.id}
-                            ),
-                            scores as (
-                                SELECT users.user_id, users.username, users.user_role,
-                                COALESCE(SUM(picks.score1), 0) + COALESCE(SUM(picks.score2), 0) + COALESCE(SUM(picks.score3), 0) total_score 
-                                FROM users
-                                LEFT JOIN picks ON users.user_id = picks.user_id
-                                WHERE users.user_id IN (SELECT user_id FROM leaguemembers WHERE league_id = ${ctx.params.id})
-                                GROUP BY users.user_id
-                                ORDER BY total_score DESC
-                            )
-                            SELECT scores.*,
-                                rank() OVER (ORDER BY scores.total_score DESC) place
-                            from scores;
-                            ;
+                            const queryPicks: picksQuery[] = await sql`
+                                WITH picks AS (
+                                    SELECT meets.meet_id, meets.meet_name, pick1.athlete_name pick1name, pick2.athlete_name pick2name, pick3.athlete_name pick3name, pick1, pick2, pick3 from meetpicks
+                                    LEFT JOIN athletes pick1 ON pick1 = pick1.athlete_id
+                                    LEFT JOIN athletes pick2 ON pick2 = pick2.athlete_id
+                                    LEFT JOIN athletes pick3 ON pick3 = pick3.athlete_id
+                                    INNER JOIN meets ON meetpicks.meet_id = meets.meet_id
+                                    WHERE user_id = ${ctx.state.user_id} AND league_id = ${ctx.params.id}
+                                )
+                                SELECT picks.meet_name, picks.pick1name, picks.pick2name, picks.pick3name,
+                                COALESCE(race1.score, 0) pick1score, COALESCE(race2.score, 0) pick2score, COALESCE(race3.score, 0) pick3score
+                                FROM picks
+                                LEFT JOIN races race1 ON race1.meet_id = picks.meet_id AND race1.athlete_id = picks.pick1
+                                LEFT JOIN races race2 ON race2.meet_id = picks.meet_id AND race2.athlete_id = picks.pick2
+                                LEFT JOIN races race3 ON race3.meet_id = picks.meet_id AND race3.athlete_id = picks.pick3
                             `;
 
-                            if (query_standings.length > 0) {
+                            if (queryPicks.length > 0) {
                                 return html`
+                                <figure>
+                                    <table>
+                                        <caption>your picks for "${query[0].league_name}" so far</caption>
+                                        <tr>
+                                            <th>meet</th>
+                                            <th>pick 1</th>
+                                            <th>pick 2</th>
+                                            <th>pick 3</th>
+                                            <th>total</th>
+                                        </tr>
+                                        ${queryPicks.map(picks => html`
+                                            <tr>
+                                                <td>${picks.meet_name}</td>
+                                                <td>${picks.pick1name == null ? "none" : `${picks.pick1name} (${picks.pick1score.toFixed(2)})`}</td>
+                                                <td>${picks.pick2name == null ? "none" : `${picks.pick2name} (${picks.pick2score.toFixed(2)})`}</td>
+                                                <td>${picks.pick3name == null ? "none" : `${picks.pick3name} (${picks.pick3score.toFixed(2)})`}</td>
+                                                <td>${(picks.pick1score+picks.pick2score+picks.pick3score).toFixed(2)}</th>
+                                            </tr>
+                                        `)}
+                                    </table>
+                                </figure>
+
+                                <p>try refreshing the page if picks are not up to date</p>
+                                `;
+                            }
+
+                            return html`<p>looks like you haven't saved your picks yet. come back later (if you just made your picks, refresh the page)</p>`;
+                        }) ()
+                    }
+                </details>
+
+                <details>
+                    <summary>league standings</summary>
+                    ${
+                        (() => {
+                            if (query_standings.length > 0) {
+                                const myPlace = query_standings.find(q => q.user_id == ctx.state.user_id) as standingsQuery;
+
+                                return html`
+                                <p>you are ranked #${myPlace.place.toString()} with ${myPlace.total_score.toFixed(2)} points</p>
+
                                 <figure>
                                     <table>
                                         <caption>standings for ${query[0].league_name}</caption>
@@ -432,8 +520,8 @@ router.get("/:id", async ctx => {
                                                 <tr>
                                                     <td class="${placeColorClass(user.place)}">
                                                     ${(user.place).toString()}</td>
-                                                    <td>${user.username}${user.user_role == null ? "" : html` <mark class="role_${user.user_role}">${user.user_role}</mark>`}</td>
-                                                    <td>${user.total_score.toFixed(2)}</td>
+                                                    <td class="${user.username == ctx.state.username ? "itsme" : ""}">${user.username}${user.user_role == null ? "" : html` <mark class="role_${user.user_role}">${user.user_role}</mark>`}</td>
+                                                    <td class="${user.username == ctx.state.username ? "itsme" : ""}">${user.total_score.toFixed(2)}</td>
                                                 </tr>
                                                 `
                                             )
@@ -450,18 +538,7 @@ router.get("/:id", async ctx => {
                 <details>
                     <summary>athletes</summary>
                         ${
-                            await (async () => {
-                                const query_athletes: (athleteTable & scoreSelect)[] = await sql`
-                                    WITH scores AS (SELECT athlete_id, SUM(races.score) total_score, AVG(races.score) avg_score FROM races GROUP BY athlete_id),
-                                    athleteScores AS (
-                                        SELECT athletes.athlete_id, athletes.athlete_name, athletes.athlete_year, athletes.sex, COALESCE(scores.total_score, 0) total_score, COALESCE(scores.avg_score, 0) avg_score FROM athletes
-                                        LEFT JOIN scores ON athletes.athlete_id = scores.athlete_id
-                                        WHERE athletes.season_id = ${query[0].season_id}
-                                    )
-                                    SELECT athleteScores.*, rank() OVER ( ORDER BY total_score DESC ) place
-                                    FROM athleteScores;
-                                `;
-
+                            (() => {
                                 if (query_athletes.length > 0) {
                                     return html`
                                         <figure>
@@ -501,13 +578,11 @@ router.get("/:id", async ctx => {
                                 <option value="">(select an athlete)</option>
 
                                 ${
-                                    await (async () => {
-                                        const queryAths: athleteTable[] = await sql`SELECT * FROM athletes WHERE season_id = ${query[0].season_id};`;
-                                        
-                                        if (queryAths.length > 0) {
-                                            return queryAths.map(ath =>
+                                    await (() => {                                        
+                                        if (query_athletes.length > 0) {
+                                            return query_athletes.map(ath =>
                                                 html`
-                                                    <option value="${ath.athlete_id.toString()}">${ath.athlete_name}</option>
+                                                    <option value="${ath.athlete_id.toString()}">${ath.athlete_name} (${ath.sex}, ${athleteYear(ath.athlete_year)})</option>
                                                 `
                                             )
                                         }
@@ -530,9 +605,7 @@ router.get("/:id", async ctx => {
                             <option value="">(select a meet)</option>
 
                             ${
-                                await (async () => {
-                                    const queryMeets: meetTable[] = await sql`SELECT meet_id, meet_name FROM meets WHERE season_id = ${query[0].season_id};`;
-                                    
+                                (() => {                                    
                                     if (queryMeets.length > 0) {
                                         return queryMeets.map(meet =>
                                             html`
