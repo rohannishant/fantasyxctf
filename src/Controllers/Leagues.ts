@@ -384,6 +384,13 @@ router.get("/:id", async ctx => {
 
         const queryMeets: meetTable[] = await sql`SELECT meet_id, meet_name FROM meets WHERE season_id = ${query[0].season_id};`;
 
+        const meetCount: number = (await sql`
+            SELECT COUNT(DISTINCT meet_id) FROM races
+            WHERE meet_id IN (
+                SELECT meet_id FROM meets WHERE season_id = ${query[0].season_id}
+            );
+        `).count;
+
         ctx.response.body = page(`league: ${query[0].league_name}`,
             html`
                 <a href="/leagues">back to leagues</a>
@@ -392,7 +399,7 @@ router.get("/:id", async ctx => {
                     <ul>
                         <li>season: "${query[0].season_name}"</li>
                         <li>${query_standings.length.toString()} members joined</li>
-                        <li>${query_athletes.length.toString()} athletes have scored a total of ${query_athletes.reduce((x, s) => x + s.total_score, 0).toFixed(2)} points in ${queryMeets.length.toString()} meet(s)</li>
+                        <li>${query_athletes.length.toString()} athletes have scored a total of ${query_athletes.reduce((x, s) => x + s.total_score, 0).toFixed(2)} points in ${meetCount.toString()} meet(s)</li>
                     </ul>
                 </div>
 
