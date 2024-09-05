@@ -425,7 +425,31 @@ router.get("/:id", async ctx => {
                             </select>
                             `;
 
+                            const shamefulUsers: { username: string }[] = await sql`
+                                SELECT username FROM users WHERE
+                                user_id NOT IN (
+                                    SELECT user_id FROM meetpicks WHERE meet_id = ${currentMeetQuery[0].meet_id}
+                                )
+                                AND user_id IN (
+                                    SELECT user_id FROM leaguemembers WHERE league_id = ${ctx.params.id}
+                                );
+                            `;                        
+
                             return html`
+                            <details>
+                                <summary>name and shame</summary>
+                                ${
+                                    shamefulUsers.length > 0 ?
+                                    html`
+                                    <p>the following users have not yet made their picks (${shamefulUsers.length.toString()})</p>
+                                    <ul>
+                                        ${shamefulUsers.map(u => html`<li>${u.username}</li>`)}
+                                    <ul>
+                                    ` :
+                                    html`<p>looks like everyone's made their picks, nice!</p>`
+                                }
+                            </details>
+
                             <details>
                                 <summary>upcoming meet</summary>
                                 <h3>${currentMeetQuery[0].meet_name}</h3>
