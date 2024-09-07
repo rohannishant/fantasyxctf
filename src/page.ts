@@ -13,6 +13,10 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 		<script src="https://unpkg.com/htmx.org@2.0.2/dist/htmx.min.js" integrity="sha384-Y7hw+L/jvKeWIRRkqWYfPcvVxHzVzn5REgzbawhxAuQGwX1XWe70vji+VSeHOThJ" crossorigin="anonymous"></script>
 		<script src="https://unpkg.com/hyperscript.org@0.9.12" integrity="sha384-+Uth1QzYJsTjnS5SXVN3fFO4I32Y571xIuv53WJ2SA7y5/36tKU1VCutONAmg5eH" crossorigin="anonymous"></script>
 		<style>
+			.invisible {
+				display: none;
+			}
+
 			ul#auth_options > li {
 				margin: 1em;
 			}
@@ -114,7 +118,7 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 		${raw(body())}
 		<footer>
 			<p>
-				fantasyxctf alpha v1.2.2<br/>
+				fantasyxctf alpha v1.2.3<br/>
 				made by Rohan Nishant
 			</p>
 		</footer>

@@ -371,16 +371,19 @@ router.get("/:id", async ctx => {
         ;
         `;
         
-        const query_athletes: (athleteTable & scoreSelect)[] = await sql`
+        const lookupAthletes = async (order_by: string) => await sql`
         WITH scores AS (SELECT athlete_id, SUM(races.score) total_score, AVG(races.score) avg_score FROM races GROUP BY athlete_id),
         athleteScores AS (
             SELECT athletes.athlete_id, athletes.athlete_name, athletes.athlete_year, athletes.sex, COALESCE(scores.total_score, 0) total_score, COALESCE(scores.avg_score, 0) avg_score FROM athletes
             LEFT JOIN scores ON athletes.athlete_id = scores.athlete_id
             WHERE athletes.season_id = ${query[0].season_id}
         )
-        SELECT athleteScores.*, rank() OVER ( ORDER BY total_score DESC ) place
+        SELECT athleteScores.*, rank() OVER ( ORDER BY ${sql(order_by)} DESC) place
         FROM athleteScores;
-        `;
+        ` as (athleteTable & scoreSelect)[];
+
+        const athletesByTotal = await lookupAthletes("total_score");
+        const athletesByAvg = await lookupAthletes("avg_score");
 
         const queryMeets: meetTable[] = await sql`SELECT meet_id, meet_name FROM meets WHERE season_id = ${query[0].season_id};`;
 
@@ -399,7 +402,7 @@ router.get("/:id", async ctx => {
                     <ul>
                         <li>season: "${query[0].season_name}"</li>
                         <li>${query_standings.length.toString()} members joined</li>
-                        <li>${query_athletes.length.toString()} athletes have scored a total of ${query_athletes.reduce((x, s) => x + s.total_score, 0).toFixed(2)} points in ${meetCount.toString()} meet(s)</li>
+                        <li>${athletesByTotal.length.toString()} athletes have scored a total of ${athletesByTotal.reduce((x, s) => x + s.total_score, 0).toFixed(2)} points in ${meetCount.toString()} meet(s)</li>
                     </ul>
                 </div>
 
@@ -570,33 +573,38 @@ router.get("/:id", async ctx => {
                     <summary>athletes</summary>
                         ${
                             (() => {
-                                if (query_athletes.length > 0) {
-                                    return html`
-                                        <figure>
-                                            <table>
+                                if (athletesByTotal.length > 0) {
+                                    const athTable = (s: string, aths: (athleteTable & scoreSelect)[], ) => html`
+                                    <figure>
+                                        <table>
+                                            <tr>
+                                                <th>place</th>
+                                                <th>name</th>
+                                                <th>sex</th>
+                                                <th>year</th>
+                                                <th>avg.</th>
+                                                <th>total</th>
+                                            </tr>
+                                            ${
+                                                aths.map(athlete => html`
                                                 <tr>
-                                                    <th>place</th>
-                                                    <th>name</th>
-                                                    <th>sex</th>
-                                                    <th>year</th>
-                                                    <th>avg.</th>
-                                                    <th>total</th>
+                                                    <td class="${placeColorClass(athlete.place)}">${(athlete.place).toString()}</td>
+                                                    <td>${athlete.athlete_name}</td>
+                                                    <td><mark class="${sexColorClass(athlete.sex)}">${athlete.sex}</mark></td>
+                                                    <td>${athleteYear(athlete.athlete_year)}</td>
+                                                    <td class="${scoreColorClass(athlete.avg_score)}">${athlete.avg_score.toFixed(2)}</td>
+                                                    <td>${athlete.total_score.toFixed(2)}</td>
                                                 </tr>
-                                                ${
-                                                    query_athletes.map(athlete => html`
-                                                    <tr>
-                                                        <td class="${placeColorClass(athlete.place)}">${(athlete.place).toString()}</td>
-                                                        <td>${athlete.athlete_name}</td>
-                                                        <td><mark class="${sexColorClass(athlete.sex)}">${athlete.sex}</mark></td>
-                                                        <td>${athleteYear(athlete.athlete_year)}</td>
-                                                        <td class="${scoreColorClass(athlete.avg_score)}">${athlete.avg_score.toFixed(2)}</td>
-                                                        <td>${athlete.total_score.toFixed(2)}</td>
-                                                    </tr>
-                                                    `)
-                                                }
-                                                <caption>${query[0].season_name}</caption>
-                                            </table>
-                                        </figure>
+                                                `)
+                                            }
+                                            <caption>${query[0].season_name} (${s})</caption>
+                                        </table>
+                                    </figure>`;
+
+                                    return html`
+                                    <input type="checkbox" _="on every input toggle .invisible on #aths_total then toggle .invisible on #aths_avg">sort by avg.</input>
+                                    <div id="aths_total">${athTable("by total", athletesByTotal)}</div>
+                                    <div id="aths_avg" class="invisible">${athTable("by average", athletesByAvg)}</div>
                                     `
                                 }
                                 return html`<p style="color: red">no athletes yet? try again later</p>`
@@ -609,13 +617,12 @@ router.get("/:id", async ctx => {
                                 <option value="">(select an athlete)</option>
 
                                 ${
-                                    await (() => {                                        
-                                        if (query_athletes.length > 0) {
-                                            return query_athletes.map(ath =>
+                                    await (() => {            
+                                        if (athletesByAvg.length > 0) {
+                                            return athletesByAvg.map(ath =>
                                                 html`
                                                     <option value="${ath.athlete_id.toString()}">${ath.athlete_name} (${ath.sex}, ${athleteYear(ath.athlete_year)})</option>
-                                                `
-                                            )
+                                                `);
                                         }
 
                                         return html``
