@@ -388,11 +388,11 @@ router.get("/:id", async ctx => {
         const queryMeets: meetTable[] = await sql`SELECT meet_id, meet_name FROM meets WHERE season_id = ${query[0].season_id};`;
 
         const meetCount: number = (await sql`
-            SELECT COUNT(DISTINCT meet_id) FROM races
+            SELECT COUNT(DISTINCT meet_id) meet_count FROM races
             WHERE meet_id IN (
                 SELECT meet_id FROM meets WHERE season_id = ${query[0].season_id}
             );
-        `).count;
+        `)[0].meet_count;
 
         ctx.response.body = page(`league: ${query[0].league_name}`,
             html`
