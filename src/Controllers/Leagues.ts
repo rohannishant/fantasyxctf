@@ -163,7 +163,24 @@ interface standingsQuery {
 router.post("/meetinfo", async ctx => {
     const formData = await ctx.request.body.formData();
     if (ctx.state.authenticated && formData.has("meet_id") && (formData.get("meet_id") as FormDataEntryValue).toString().length > 0) {
-        const query: (raceTable & athleteTable & { place: number} )[] = await sql`SELECT * , rank() OVER ( ORDER BY races.score DESC ) place FROM races INNER JOIN athletes ON races.athlete_id = athletes.athlete_id WHERE races.meet_id = ${(formData.get("meet_id") as FormDataEntryValue).toString()};`
+        const meet_id = (formData.get("meet_id") as FormDataEntryValue).toString();
+        
+        const query: (raceTable & athleteTable & { place: number, pick_count: number} )[] = await sql`
+            WITH athlete_pick_count AS (
+                SELECT athlete_id, COUNT(picks_id) pick_count from athletes
+                LEFT JOIN meetpicks ON (pick1 = athlete_id OR pick2 = athlete_id OR pick3 = athlete_id) AND meet_id = ${meet_id}
+                GROUP BY athlete_id
+            )
+            SELECT athletes.athlete_id, athlete_name, athlete_year, sex, score, previous_minutes, previous_seconds, finish_minutes, finish_seconds,
+            rank() OVER ( ORDER BY races.score DESC ) place, pick_count
+            FROM athlete_pick_count
+            INNER JOIN races ON races.athlete_id = athlete_pick_count.athlete_id AND races.meet_id = ${meet_id}
+            INNER JOIN athletes ON athletes.athlete_id = athlete_pick_count.athlete_id;
+        `;
+
+        const numberOfPicksSubmitted = (await sql`
+            SELECT FROM meetpicks WHERE meet_id = ${meet_id};
+        `).length;
 
         if (query.length > 0) {
             ctx.response.body = html`
@@ -178,6 +195,7 @@ router.post("/meetinfo", async ctx => {
                         <th>prev.</th>
                         <th>finish</th>
                         <th>score</th>
+                        <th>pick %</th>
                     </tr>
                     ${
                         query.map(race =>
@@ -190,6 +208,7 @@ router.post("/meetinfo", async ctx => {
                                 <td>${race.previous_minutes.toString()}:${race.previous_seconds.toString().padStart(2,"0")}</td>
                                 <td>${race.finish_minutes.toString()}:${race.finish_seconds.toString().padStart(2,"0")}</td>
                                 <td class="${scoreColorClass(race.score)}">${race.score.toFixed(2)}</td>
+                                <td>${(100 * race.pick_count / numberOfPicksSubmitted).toFixed(0)}%</td>
                             </tr>
                             `
                         )
@@ -394,6 +413,23 @@ router.get("/:id", async ctx => {
             );
         `)[0].meet_count;
 
+        const getPicks = async (user_id: number) => await sql`
+            WITH picks AS (
+                SELECT meets.meet_id, meets.meet_name, pick1.athlete_name pick1name, pick2.athlete_name pick2name, pick3.athlete_name pick3name, pick1, pick2, pick3 from meetpicks
+                LEFT JOIN athletes pick1 ON pick1 = pick1.athlete_id
+                LEFT JOIN athletes pick2 ON pick2 = pick2.athlete_id
+                LEFT JOIN athletes pick3 ON pick3 = pick3.athlete_id
+                INNER JOIN meets ON meetpicks.meet_id = meets.meet_id
+                WHERE user_id = ${user_id} AND league_id = ${ctx.params.id}
+            )
+            SELECT picks.meet_name, picks.pick1name, picks.pick2name, picks.pick3name,
+            COALESCE(race1.score, 0) pick1score, COALESCE(race2.score, 0) pick2score, COALESCE(race3.score, 0) pick3score
+            FROM picks
+            LEFT JOIN races race1 ON race1.meet_id = picks.meet_id AND race1.athlete_id = picks.pick1
+            LEFT JOIN races race2 ON race2.meet_id = picks.meet_id AND race2.athlete_id = picks.pick2
+            LEFT JOIN races race3 ON race3.meet_id = picks.meet_id AND race3.athlete_id = picks.pick3
+        `; 
+
         ctx.response.body = page(`league: ${query[0].league_name}`,
             html`
                 <a href="/leagues">back to leagues</a>
@@ -480,22 +516,7 @@ router.get("/:id", async ctx => {
                     <summary>my picks</summary>
                     ${
                         await (async () => {
-                            const queryPicks: picksQuery[] = await sql`
-                                WITH picks AS (
-                                    SELECT meets.meet_id, meets.meet_name, pick1.athlete_name pick1name, pick2.athlete_name pick2name, pick3.athlete_name pick3name, pick1, pick2, pick3 from meetpicks
-                                    LEFT JOIN athletes pick1 ON pick1 = pick1.athlete_id
-                                    LEFT JOIN athletes pick2 ON pick2 = pick2.athlete_id
-                                    LEFT JOIN athletes pick3 ON pick3 = pick3.athlete_id
-                                    INNER JOIN meets ON meetpicks.meet_id = meets.meet_id
-                                    WHERE user_id = ${ctx.state.user_id} AND league_id = ${ctx.params.id}
-                                )
-                                SELECT picks.meet_name, picks.pick1name, picks.pick2name, picks.pick3name,
-                                COALESCE(race1.score, 0) pick1score, COALESCE(race2.score, 0) pick2score, COALESCE(race3.score, 0) pick3score
-                                FROM picks
-                                LEFT JOIN races race1 ON race1.meet_id = picks.meet_id AND race1.athlete_id = picks.pick1
-                                LEFT JOIN races race2 ON race2.meet_id = picks.meet_id AND race2.athlete_id = picks.pick2
-                                LEFT JOIN races race3 ON race3.meet_id = picks.meet_id AND race3.athlete_id = picks.pick3
-                            `;
+                            const queryPicks = await getPicks(ctx.state.user_id);
 
                             if (queryPicks.length > 0) {
                                 return html`
