@@ -195,23 +195,31 @@ router.post("/meetinfo", async ctx => {
                         <th>prev.</th>
                         <th>finish</th>
                         <th>score</th>
+                        <th>diff</th>
                         <th>pick %</th>
                     </tr>
                     ${
-                        query.map(race =>
-                            html`
+                        query.map(race => {
+                            const p = 60 * race.previous_minutes + race.previous_seconds;
+                            const f = 60 * race.finish_minutes + race.finish_seconds;
+                            const d = 100 * (f - p) / p;
+
+                            const n = race.athlete_name.split(" ");
+
+                            return html`
                             <tr>
                                 <td class="${placeColorClass(race.place)}">${(race.place).toString()}</td>
-                                <td>${race.athlete_name}</td>
+                                <td>${n[0][0]}. ${n[1]}</td>
                                 <td><mark class="${sexColorClass(race.sex)}">${race.sex}</mark></td>
                                 <td>${athleteYear(race.athlete_year)}</td>
                                 <td>${race.previous_minutes.toString()}:${race.previous_seconds.toString().padStart(2,"0")}</td>
                                 <td>${race.finish_minutes.toString()}:${race.finish_seconds.toString().padStart(2,"0")}</td>
                                 <td class="${scoreColorClass(race.score)}">${race.score.toFixed(2)}</td>
+                                <td class="${scoreColorClass(race.score)}">${d > 0 ? "+" : ""}${d.toFixed(1)}%</td>
                                 <td>${(100 * race.pick_count / numberOfPicksSubmitted).toFixed(0)}%</td>
                             </tr>
                             `
-                        )
+                        })
                     }
                 </table>
                 </figure>
@@ -242,19 +250,25 @@ router.post("/athleteinfo", async ctx => {
                         <th>prev.</th>
                         <th>finish</th>
                         <th>score</th>
+                        <th>diff</th>
                     </tr>
                     ${
-                        query.map((race, i) =>
-                            html`
+                        query.map((race, i) => {
+                            const p = 60 * race.previous_minutes + race.previous_seconds;
+                            const f = 60 * race.finish_minutes + race.finish_seconds;
+                            const d = 100 * (f - p) / p;
+
+                            return html`
                             <tr>
                                 <td>${(i + 1).toString()}</td>
                                 <td>${race.meet_name}</td>
                                 <td>${race.previous_minutes.toString()}:${race.previous_seconds.toString().padStart(2, "0")}</td>
                                 <td>${race.finish_minutes.toString()}:${race.finish_seconds.toString().padStart(2, "0")}</td>
                                 <td class="${scoreColorClass(race.score)}">${race.score.toString()}</td>
+                                <td class="${scoreColorClass(race.score)}">${d > 0 ? "+" : ""}${d.toFixed(1)}%</td>
                             </tr>
                             `
-                        )
+                        })
                     }
                 </table>
                 </figure>
@@ -415,7 +429,7 @@ router.get("/:id", async ctx => {
 
         const getPicks = async (user_id: number) => await sql`
             WITH picks AS (
-                SELECT meets.meet_id, meets.meet_name, pick1.athlete_name pick1name, pick2.athlete_name pick2name, pick3.athlete_name pick3name, pick1, pick2, pick3 from meetpicks
+                SELECT meets.meet_id, meets.meet_name, pick1.athlete_name pick1name, pick2.athlete_name pick2name, pick3.athlete_name pick3name, pick1, pick2, pick3, picks_id from meetpicks
                 LEFT JOIN athletes pick1 ON pick1 = pick1.athlete_id
                 LEFT JOIN athletes pick2 ON pick2 = pick2.athlete_id
                 LEFT JOIN athletes pick3 ON pick3 = pick3.athlete_id
@@ -428,6 +442,7 @@ router.get("/:id", async ctx => {
             LEFT JOIN races race1 ON race1.meet_id = picks.meet_id AND race1.athlete_id = picks.pick1
             LEFT JOIN races race2 ON race2.meet_id = picks.meet_id AND race2.athlete_id = picks.pick2
             LEFT JOIN races race3 ON race3.meet_id = picks.meet_id AND race3.athlete_id = picks.pick3
+            ORDER BY picks_id ASC;
         `; 
 
         ctx.response.body = page(`league: ${query[0].league_name}`,
@@ -605,6 +620,7 @@ router.get("/:id", async ctx => {
                                                 <th>year</th>
                                                 <th>avg.</th>
                                                 <th>total</th>
+                                                <th># races</th>
                                             </tr>
                                             ${
                                                 aths.map(athlete => html`
@@ -615,6 +631,7 @@ router.get("/:id", async ctx => {
                                                     <td>${athleteYear(athlete.athlete_year)}</td>
                                                     <td class="${scoreColorClass(athlete.avg_score)}">${athlete.avg_score.toFixed(2)}</td>
                                                     <td>${athlete.total_score.toFixed(2)}</td>
+                                                    <td>${athlete.total_score > 0 ? (athlete.total_score / athlete.avg_score).toFixed(0) : "0"}</td>
                                                 </tr>
                                                 `)
                                             }
