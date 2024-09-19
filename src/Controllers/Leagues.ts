@@ -550,7 +550,7 @@ router.get("/:id", async ctx => {
                                                 <td>${picks.meet_name}</td>
                                                 <td>${picks.pick1name == null ? "none" : `${picks.pick1name[0]}. ${picks.pick1name.split(" ")[1]} (${picks.pick1score.toFixed(2)})`}</td>
                                                 <td>${picks.pick2name == null ? "none" : `${picks.pick2name[0]}. ${picks.pick2name.split(" ")[1]} (${picks.pick2score.toFixed(2)})`}</td>
-                                                <td>${picks.pick3name == null ? "none" : `${picks.pick3name[0]}. ${picks.pick2name.split(" ")[1]} (${picks.pick3score.toFixed(2)})`}</td>
+                                                <td>${picks.pick3name == null ? "none" : `${picks.pick3name[0]}. ${picks.pick3name.split(" ")[1]} (${picks.pick3score.toFixed(2)})`}</td>
                                                 <td>${(picks.pick1score+picks.pick2score+picks.pick3score).toFixed(2)}</th>
                                             </tr>
                                         `)}
@@ -590,7 +590,7 @@ router.get("/:id", async ctx => {
                                                 <tr>
                                                     <td class="${placeColorClass(user.place)}">
                                                     ${(user.place).toString()}</td>
-                                                    <td class="${user.username == ctx.state.username ? "itsme" : ""}">${user.username}${user.user_role == null ? "" : html` <mark class="role_${user.user_role}">${user.user_role}</mark>`}</td>
+                                                    <td><span class="${user.username == ctx.state.username ? "itsme" : ""}">${user.username}</span>${user.user_role == null ? "" : html` <mark class="role_${user.user_role}">${user.user_role}</mark>`}</td>
                                                     <td class="${user.username == ctx.state.username ? "itsme" : ""}">${user.total_score.toFixed(2)}</td>
                                                 </tr>
                                                 `
@@ -611,7 +611,7 @@ router.get("/:id", async ctx => {
                             (() => {
                                 if (athletesByTotal.length > 0) {
                                     const athTable = (s: string, aths: (athleteTable & scoreSelect)[], ) => html`
-                                    <figure>
+                                    <figure style="height: 30em; overflow: auto">
                                         <table>
                                             <tr>
                                                 <th>place</th>

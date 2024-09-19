@@ -91,8 +91,8 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 			}
 
 			.itsme {
-				font-style: italic;
 				font-weight: bold;
+				text-decoration: solid underline .1em;
 			}
 		</style>
 	</head>
@@ -118,7 +118,7 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 		${raw(body())}
 		<footer>
 			<p>
-				fantasyxctf alpha v1.3.1<br/>
+				fantasyxctf alpha v1.3.2<br/>
 				made by Rohan Nishant
 			</p>
 		</footer>
