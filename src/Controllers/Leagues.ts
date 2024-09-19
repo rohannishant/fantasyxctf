@@ -474,7 +474,7 @@ router.get("/:id", async ctx => {
                                 <option value="null">(pick an athlete)</option>
 
                                 ${athletes.map(athlete => html`
-                                    <option value="${athlete.athlete_id.toString()}" ${currentMeetPicks.length > 0 && athlete.athlete_id == (currentMeetPicks[0] as any)[`pick${no}`] ? "selected" : ""}>${athlete.athlete_name} (${athlete.sex}, ${athleteYear(athlete.athlete_year)})</option>
+                                    <option value="${athlete.athlete_id.toString()}" ${currentMeetPicks.length > 0 && athlete.athlete_id == (currentMeetPicks[0] as any)[`pick${no}`] ? "selected" : ""}>${athlete.athlete_name[0]}. ${athlete.athlete_name.split(" ")[1]} (${athlete.sex}, ${athleteYear(athlete.athlete_year)})</option>
                                         `)}
                             </select>
                             `;
@@ -548,9 +548,9 @@ router.get("/:id", async ctx => {
                                         ${queryPicks.map(picks => html`
                                             <tr>
                                                 <td>${picks.meet_name}</td>
-                                                <td>${picks.pick1name == null ? "none" : `${picks.pick1name} (${picks.pick1score.toFixed(2)})`}</td>
-                                                <td>${picks.pick2name == null ? "none" : `${picks.pick2name} (${picks.pick2score.toFixed(2)})`}</td>
-                                                <td>${picks.pick3name == null ? "none" : `${picks.pick3name} (${picks.pick3score.toFixed(2)})`}</td>
+                                                <td>${picks.pick1name == null ? "none" : `${picks.pick1name[0]}. ${picks.pick1name.split(" ")[1]} (${picks.pick1score.toFixed(2)})`}</td>
+                                                <td>${picks.pick2name == null ? "none" : `${picks.pick2name[0]}. ${picks.pick2name.split(" ")[1]} (${picks.pick2score.toFixed(2)})`}</td>
+                                                <td>${picks.pick3name == null ? "none" : `${picks.pick3name[0]}. ${picks.pick2name.split(" ")[1]} (${picks.pick3score.toFixed(2)})`}</td>
                                                 <td>${(picks.pick1score+picks.pick2score+picks.pick3score).toFixed(2)}</th>
                                             </tr>
                                         `)}
@@ -626,7 +626,7 @@ router.get("/:id", async ctx => {
                                                 aths.map(athlete => html`
                                                 <tr>
                                                     <td class="${placeColorClass(athlete.place)}">${(athlete.place).toString()}</td>
-                                                    <td>${athlete.athlete_name}</td>
+                                                    <td>${athlete.athlete_name[0]}. ${athlete.athlete_name.split(" ")[1]}</td>
                                                     <td><mark class="${sexColorClass(athlete.sex)}">${athlete.sex}</mark></td>
                                                     <td>${athleteYear(athlete.athlete_year)}</td>
                                                     <td class="${scoreColorClass(athlete.avg_score)}">${athlete.avg_score.toFixed(2)}</td>
@@ -659,7 +659,7 @@ router.get("/:id", async ctx => {
                                         if (athletesByAvg.length > 0) {
                                             return athletesByAvg.map(ath =>
                                                 html`
-                                                    <option value="${ath.athlete_id.toString()}">${ath.athlete_name} (${ath.sex}, ${athleteYear(ath.athlete_year)})</option>
+                                                    <option value="${ath.athlete_id.toString()}">${ath.athlete_name[0]}. ${ath.athlete_name.split(" ")[1]} (${ath.sex}, ${athleteYear(ath.athlete_year)})</option>
                                                 `);
                                         }
 
