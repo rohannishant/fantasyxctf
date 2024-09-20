@@ -99,6 +99,15 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 			#form-container {
 				width: fit-content;
 			}
+
+			details[open] summary ~ *:not(.htmx-indicator) {
+				animation: details_open 1s ease-in-out;
+			}
+
+			@keyframes details_open {
+				0%    {opacity: 0; }
+				100%  {opacity: 1; }
+			}
 		</style>
 	</head>
 	<body>
@@ -123,7 +132,7 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 		${raw(body())}
 		<footer>
 			<p>
-				fantasyxctf alpha v1.4.2<br/>
+				fantasyxctf alpha v1.4.3<br/>
 				made by Rohan Nishant
 			</p>
 		</footer>
