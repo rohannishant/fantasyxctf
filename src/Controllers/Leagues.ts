@@ -73,7 +73,7 @@ router.get("/", async ctx => {
 	if (ctx.state.authenticated) {
         ctx.response.body = page("fantasy leagues",
             html`
-                <a href="/">go home</a>
+                <a href="/" hx-boost="true"><i class="bi bi-house-fill"></i> go home</a>
     
                 <p>joinable leagues</p>
                 <ul>
@@ -92,7 +92,7 @@ router.get("/", async ctx => {
                 </ul>
     
                 <p>joined leagues</p>
-                <ul>
+                <ul hx-boost="true">
                     ${
                         await (async () => {
                             const query: leagueTable[] = await sql`SELECT * from leagues WHERE league_id IN (SELECT league_id FROM leaguemembers WHERE user_id = ${ctx.state.user_id});`;
@@ -183,10 +183,13 @@ router.post("/meetinfo", async ctx => {
         `).length;
 
         if (query.length > 0) {
+            const meetTotal = query.reduce((s,r) => s + r.score, 0);
+            const meetAverage = meetTotal / query.length;
+
             ctx.response.body = html`
             <figure>
                 <table>
-                    <caption>${(await sql`SELECT meet_name FROM meets WHERE meet_id=${(formData.get("meet_id") as FormDataEntryValue).toString()}`)[0].meet_name}</caption>
+                    <caption>${(await sql`SELECT meet_name FROM meets WHERE meet_id=${(formData.get("meet_id") as FormDataEntryValue).toString()}`)[0].meet_name} (${meetTotal.toFixed(2)} points, ${meetAverage.toFixed(2)} avg.)</caption>
                     <tr>
                         <th>place</th>
                         <th>name</th>
@@ -261,7 +264,7 @@ router.post("/athleteinfo", async ctx => {
                             return html`
                             <tr>
                                 <td>${(i + 1).toString()}</td>
-                                <td>${race.meet_name}</td>
+                                <td><i class="bi bi-calendar-event"></i> ${race.meet_name}</td>
                                 <td>${race.previous_minutes.toString()}:${race.previous_seconds.toString().padStart(2, "0")}</td>
                                 <td>${race.finish_minutes.toString()}:${race.finish_seconds.toString().padStart(2, "0")}</td>
                                 <td class="${scoreColorClass(race.score)}">${race.score.toString()}</td>
@@ -341,7 +344,7 @@ router.post("/:id/meetpicks", async ctx => {
 
 const scoringInformation = html`
 <details>
-    <summary>scoring information</summary>
+    <summary><i class="bi bi-calculator"></i> scoring information</summary>
     <p>
         <code>s = 100 * (p / f) ^ 10</code>
         <ul>
@@ -362,7 +365,7 @@ const scoringInformation = html`
 
 const rulesInformation = html`
 <details>
-    <summary>rules</summary>
+    <summary><i class="bi bi-info-square"></i> rules</summary>
     <ul>
         <li>every week, pick 3 unique athletes to score points for you</li>
         <li>athletes score points based on their previous best time (see more information about scoring below)</li>
@@ -447,13 +450,13 @@ router.get("/:id", async ctx => {
 
         ctx.response.body = page(`league: ${query[0].league_name}`,
             html`
-                <a href="/leagues">back to leagues</a>
+                <a href="/leagues" hx-boost="true"><i class="bi bi-trophy-fill"></i> back to leagues</a>
                 <h2>${query[0].league_name}</h2>
                 <div class="notice">
                     <ul>
-                        <li>season: "${query[0].season_name}"</li>
-                        <li>${query_standings.length.toString()} members joined</li>
-                        <li>${athletesByTotal.length.toString()} athletes have scored a total of ${athletesByTotal.reduce((x, s) => x + s.total_score, 0).toFixed(2)} points in ${meetCount.toString()} meet(s)</li>
+                        <li><i class="bi bi-info-circle-fill"></i> season: "${query[0].season_name}"</li>
+                        <li><i class="bi bi-people-fill"></i> ${query_standings.length.toString()} members joined</li>
+                        <li><i class="bi bi-card-text"></i> ${athletesByTotal.length.toString()} athletes have scored a total of ${athletesByTotal.reduce((x, s) => x + s.total_score, 0).toFixed(2)} points in ${meetCount.toString()} meet(s)</li>
                     </ul>
                 </div>
 
@@ -491,13 +494,13 @@ router.get("/:id", async ctx => {
 
                             return html`
                             <details>
-                                <summary>name and shame</summary>
+                                <summary><i class="bi bi-emoji-frown"></i> name and shame</summary>
                                 ${
                                     shamefulUsers.length > 0 ?
                                     html`
                                     <p>the following users have not yet made their picks (${shamefulUsers.length.toString()})</p>
-                                    <ul>
-                                        ${shamefulUsers.map(u => html`<li>${u.username}</li>`)}
+                                    <ul style="column-count: 3">
+                                        ${shamefulUsers.map(u => html`<li><i class="bi bi-person-exclamation"></i> ${u.username}</li>`)}
                                     <ul>
                                     ` :
                                     html`<p>looks like everyone's made their picks, nice!</p>`
@@ -505,7 +508,7 @@ router.get("/:id", async ctx => {
                             </details>
 
                             <details>
-                                <summary>upcoming meet</summary>
+                                <summary><i class="bi bi-calendar-check"></i> upcoming meet</summary>
                                 <h3>${currentMeetQuery[0].meet_name}</h3>
                                 <div id="pick-messenger"><p>make 3 unique picks for the upcoming meet</p></div>
                                 <span id="meet-picker-loading" class="htmx-indicator">submitting...</span>
@@ -517,7 +520,7 @@ router.get("/:id", async ctx => {
                                         ${athletePicker(3)}
                                     </fieldset>
 
-                                    <button type="submit">submit</button>
+                                    <button type="submit"><i class="bi bi-floppy-fill"></i> save picks</button>
                                 </form>
                             </details>
                             `;
@@ -528,7 +531,7 @@ router.get("/:id", async ctx => {
                 }
 
                 <details>
-                    <summary>my picks</summary>
+                    <summary><i class="bi bi-table"></i> my picks</summary>
                     ${
                         await (async () => {
                             const queryPicks = await getPicks(ctx.state.user_id);
@@ -547,7 +550,7 @@ router.get("/:id", async ctx => {
                                         </tr>
                                         ${queryPicks.map(picks => html`
                                             <tr>
-                                                <td>${picks.meet_name}</td>
+                                                <td><i class="bi bi-calendar-event"></i> ${picks.meet_name}</td>
                                                 <td>${picks.pick1name == null ? "none" : `${picks.pick1name[0]}. ${picks.pick1name.split(" ")[1]} (${picks.pick1score.toFixed(2)})`}</td>
                                                 <td>${picks.pick2name == null ? "none" : `${picks.pick2name[0]}. ${picks.pick2name.split(" ")[1]} (${picks.pick2score.toFixed(2)})`}</td>
                                                 <td>${picks.pick3name == null ? "none" : `${picks.pick3name[0]}. ${picks.pick3name.split(" ")[1]} (${picks.pick3score.toFixed(2)})`}</td>
@@ -567,7 +570,7 @@ router.get("/:id", async ctx => {
                 </details>
 
                 <details>
-                    <summary>league standings</summary>
+                    <summary><i class="bi bi-award"></i> league standings</summary>
                     ${
                         (() => {
                             if (query_standings.length > 0) {
@@ -578,7 +581,7 @@ router.get("/:id", async ctx => {
 
                                 <figure>
                                     <table>
-                                        <caption>standings for ${query[0].league_name}</caption>
+                                        <caption><i class="bi bi-award"></i> standings for ${query[0].league_name}</caption>
                                         <tr>
                                             <th>place</th>
                                             <th>username</th>
@@ -590,7 +593,7 @@ router.get("/:id", async ctx => {
                                                 <tr>
                                                     <td class="${placeColorClass(user.place)}">
                                                     ${(user.place).toString()}</td>
-                                                    <td><span class="${user.username == ctx.state.username ? "itsme" : ""}">${user.username}</span>${user.user_role == null ? "" : html` <mark class="role_${user.user_role}">${user.user_role}</mark>`}</td>
+                                                    <td><span class="${user.username == ctx.state.username ? "itsme" : ""}"><i class="bi bi-person${user.username == ctx.state.username ? "-fill" : ""}"></i> ${user.username}</span>${user.user_role == null ? "" : html` <mark class="role_${user.user_role}">${user.user_role}</mark>`}</td>
                                                     <td class="${user.username == ctx.state.username ? "itsme" : ""}">${user.total_score.toFixed(2)}</td>
                                                 </tr>
                                                 `
@@ -606,7 +609,7 @@ router.get("/:id", async ctx => {
                     }
                 </details>
                 <details>
-                    <summary>athletes</summary>
+                    <summary><i class="bi bi-people"></i> athletes</summary>
                         ${
                             (() => {
                                 if (athletesByTotal.length > 0) {
@@ -667,14 +670,14 @@ router.get("/:id", async ctx => {
                                     })()
                                 }
                             </select>
-                            <button hx-post="/leagues/athleteinfo" hx-target="#athlete-viewer" hx-swap="innerHTML" hx-include="#athlete-lookup" hx-indicator="#athlete-viewer-loading">view athlete detailed stats</button>
+                            <button hx-post="/leagues/athleteinfo" hx-target="#athlete-viewer" hx-swap="innerHTML" hx-include="#athlete-lookup" hx-indicator="#athlete-viewer-loading"><i class="bi bi-card-list"></i> view athlete detailed stats</button>
                             <span id="athlete-viewer-loading" class="htmx-indicator">loading...</span>
                             <div id="athlete-viewer"></div>
                         </div>
                 </details>
 
                 <details>
-                        <summary>meets</summary>
+                        <summary><i class="bi bi-calendar2-week"></i> meets</summary>
                         <label for="meet-lookup">select a meet to view</label>
 
                         <select name="meet_id" id="meet-lookup" _="on change set #meet-viewer's innerHTML to ''">
@@ -694,7 +697,7 @@ router.get("/:id", async ctx => {
                                 })()
                             }
                         </select>
-                        <button hx-post="/leagues/meetinfo" hx-target="#meet-viewer" hx-swap="innerHTML" hx-include="#meet-lookup" hx-indicator="#meet-viewer-loading"> view meet stats</button>
+                        <button hx-post="/leagues/meetinfo" hx-target="#meet-viewer" hx-swap="innerHTML" hx-include="#meet-lookup" hx-indicator="#meet-viewer-loading"><i class="bi bi-card-list"></i> view meet stats</button>
                         <span id="meet-viewer-loading" class="htmx-indicator">loading...</span>
                         <div id="meet-viewer"></div>
                 </details>

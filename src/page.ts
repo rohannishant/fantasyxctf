@@ -8,11 +8,13 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>${title}</title>
 		<link rel="stylesheet" href="https://unpkg.com/simpledotcss@2.3.2/simple.min.css" integrity="sha384-a8MdcEOz+xtPJb1l6GTwApIkj5ou00axL+3y5Yps9lyCkNGQ8tteJhV+YMbvT/Mr" crossorigin="anonymous">
+		<link rel="stylesheet" href="https://unpkg.com/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
 		<link rel="icon" href="/favicon.png" />
 		<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 		<script src="https://unpkg.com/htmx.org@2.0.2/dist/htmx.min.js" integrity="sha384-Y7hw+L/jvKeWIRRkqWYfPcvVxHzVzn5REgzbawhxAuQGwX1XWe70vji+VSeHOThJ" crossorigin="anonymous"></script>
 		<script src="https://unpkg.com/hyperscript.org@0.9.12" integrity="sha384-+Uth1QzYJsTjnS5SXVN3fFO4I32Y571xIuv53WJ2SA7y5/36tKU1VCutONAmg5eH" crossorigin="anonymous"></script>
 		<style>
+			
 			.invisible {
 				display: none;
 			}
@@ -92,7 +94,10 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 
 			.itsme {
 				font-weight: bold;
-				text-decoration: solid underline .1em;
+			}
+
+			#form-container {
+				width: fit-content;
 			}
 		</style>
 	</head>
@@ -100,16 +105,16 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 		<h1>fantasy xc</h1>
 		${ showAuth ? html`<div class="notice">
 			${state.authenticated ? 
-				html`<p>logged in as ${state.username}${state.user_role == null ? "" : html` <mark class="role_${state.user_role}">${state.user_role}</mark>`}</p>
+				html`<p><i class="bi bi-person-fill"></i> logged in as ${state.username}${state.user_role == null ? "" : html` <mark class="role_${state.user_role}">${state.user_role}</mark>`}</p>
 				<ul id="auth_options">
-				<li><a class="button" href="/logout">log out</a></li>
-				<li><button hx-get="/account/delete_form" hx-target="#form-container" hx-swap="innerHTML">delete account</button></li>
+				<li><a class="button" href="/logout"><i class="bi bi-door-open-fill"></i> log out</a></li>
+				<li><button hx-get="/account/delete_form" hx-target="#form-container" hx-swap="innerHTML"><i class="bi bi-x-circle-fill"></i> delete account</button></li>
 				</ul>` :
 
-				html`<p>you are not logged in</p>
+				html`<p><i class="bi bi-person-fill-x"></i>you are not logged in</p>
 				<ul id="auth_options">
-				<li><button hx-get="/login_form" hx-target="#form-container" hx-swap="innerHTML" hx-indicator="#auth-loading">log in</button></li>
-				<li><button hx-get="/signup_form" hx-target="#form-container" hx-swap="innerHTML" hx-indicator="#auth-loading">sign up</a></li>
+				<li><button hx-get="/login_form" hx-target="#form-container" hx-swap="innerHTML" hx-indicator="#auth-loading"><i class="bi bi-box-arrow-in-right"></i> log in</button></li>
+				<li><button hx-get="/signup_form" hx-target="#form-container" hx-swap="innerHTML" hx-indicator="#auth-loading"><i class="bi bi-person-plus-fill"></i> sign up</a></li>
 				</ul>`
 			}
 			<span id="auth-loading" class="htmx-indicator">loading...</span>
@@ -118,7 +123,7 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 		${raw(body())}
 		<footer>
 			<p>
-				fantasyxctf alpha v1.3.2<br/>
+				fantasyxctf alpha v1.4.0<br/>
 				made by Rohan Nishant
 			</p>
 		</footer>

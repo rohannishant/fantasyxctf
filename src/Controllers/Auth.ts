@@ -37,7 +37,7 @@ const signupForm = html`
 
 	<fieldset>
 		<legend>sign up</legend>
-		<p>max 20 characters for username and password. username must contain no spaces or special characters except underscore.</p>
+		<p style="max-width: 25em;">max 20 characters for username and password. username must contain no spaces or special characters except underscore.</p>
 		
 		<label for="signup-username">username:</label>
 		<input type="text" id="signup-username" name="username" required maxlength="20"></input> 
@@ -68,7 +68,7 @@ const deleteForm = html`
 		<legend>delete account</legend>
 
 		<input type="checkbox" id="sure1" name="sure1" _="on click toggle @disabled on #delete-submit"/>
-		<label for="sure1">are you sure?</label>
+		<label for="sure1"><i class="bi bi-exclamation-triangle"></i> are you sure?</label>
 
 		<input type="submit" value="submit" id="delete-submit" disabled></input>
 	</fieldset>
