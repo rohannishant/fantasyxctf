@@ -105,16 +105,16 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 		<h1>fantasy xc</h1>
 		${ showAuth ? html`<div class="notice">
 			${state.authenticated ? 
-				html`<p><i class="bi bi-person-fill"></i> logged in as ${state.username}${state.user_role == null ? "" : html` <mark class="role_${state.user_role}">${state.user_role}</mark>`}</p>
+				html`<p><i aria-hidden="true" class="bi bi-person-fill"></i> logged in as ${state.username}${state.user_role == null ? "" : html` <mark class="role_${state.user_role}">${state.user_role}</mark>`}</p>
 				<ul id="auth_options">
-				<li><a class="button" href="/logout"><i class="bi bi-door-open-fill"></i> log out</a></li>
-				<li><button hx-get="/account/delete_form" hx-target="#form-container" hx-swap="innerHTML"><i class="bi bi-x-circle-fill"></i> delete account</button></li>
+				<li><a class="button" href="/logout"><i aria-hidden="true" class="bi bi-door-open-fill"></i> log out</a></li>
+				<li><button hx-get="/account/delete_form" hx-target="#form-container" hx-swap="innerHTML"><i aria-hidden="true" class="bi bi-x-circle-fill"></i> delete account</button></li>
 				</ul>` :
 
-				html`<p><i class="bi bi-person-fill-x"></i>you are not logged in</p>
+				html`<p><i aria-hidden="true" class="bi bi-person-fill-x"></i> you are not logged in</p>
 				<ul id="auth_options">
-				<li><button hx-get="/login_form" hx-target="#form-container" hx-swap="innerHTML" hx-indicator="#auth-loading"><i class="bi bi-box-arrow-in-right"></i> log in</button></li>
-				<li><button hx-get="/signup_form" hx-target="#form-container" hx-swap="innerHTML" hx-indicator="#auth-loading"><i class="bi bi-person-plus-fill"></i> sign up</a></li>
+				<li><button hx-get="/login_form" hx-target="#form-container" hx-swap="innerHTML" hx-indicator="#auth-loading"><i aria-hidden="true" class="bi bi-box-arrow-in-right"></i> log in</button></li>
+				<li><button hx-get="/signup_form" hx-target="#form-container" hx-swap="innerHTML" hx-indicator="#auth-loading"><i aria-hidden="true" class="bi bi-person-plus-fill"></i> sign up</a></li>
 				</ul>`
 			}
 			<span id="auth-loading" class="htmx-indicator">loading...</span>
@@ -123,7 +123,7 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 		${raw(body())}
 		<footer>
 			<p>
-				fantasyxctf alpha v1.4.0<br/>
+				fantasyxctf alpha v1.4.1<br/>
 				made by Rohan Nishant
 			</p>
 		</footer>

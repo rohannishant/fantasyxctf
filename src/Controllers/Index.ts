@@ -8,7 +8,7 @@ router.get("/", ctx => {
 	ctx.response.body = page("fantasyxctf",
 		html`
 			${ ctx.state.authenticated ? 
-			html`<a class="button" href="/leagues" hx-boost="true" style="width: fit-content"><i class="bi bi-trophy-fill"></i> view leagues</a>`
+			html`<a class="button" href="/leagues" hx-boost="true" style="width: fit-content"><i aria-hidden="true" class="bi bi-trophy-fill"></i> view leagues</a>`
 			:
 			html`<p>please login to play fantasy</p>`}
 		`,

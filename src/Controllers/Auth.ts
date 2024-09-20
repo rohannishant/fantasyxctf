@@ -68,7 +68,7 @@ const deleteForm = html`
 		<legend>delete account</legend>
 
 		<input type="checkbox" id="sure1" name="sure1" _="on click toggle @disabled on #delete-submit"/>
-		<label for="sure1"><i class="bi bi-exclamation-triangle"></i> are you sure?</label>
+		<label for="sure1"><i aria-hidden="true" class="bi bi-exclamation-triangle"></i> are you sure?</label>
 
 		<input type="submit" value="submit" id="delete-submit" disabled></input>
 	</fieldset>
