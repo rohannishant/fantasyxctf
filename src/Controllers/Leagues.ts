@@ -499,7 +499,7 @@ router.get("/:id", async ctx => {
                                     shamefulUsers.length > 0 ?
                                     html`
                                     <p>the following users have not yet made their picks (${shamefulUsers.length.toString()})</p>
-                                    <ul style="column-count: 3">
+                                    <ul>
                                         ${shamefulUsers.map(u => html`<li><i aria-hidden="true" class="bi bi-person-exclamation"></i> ${u.username}</li>`)}
                                     <ul>
                                     ` :
