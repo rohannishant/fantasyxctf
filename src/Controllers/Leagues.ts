@@ -353,7 +353,7 @@ const scoringInformation = html`
             <li>f = finish time</li>
         </ul>
 
-        see <a href="https://www.desmos.com/calculator/se7klkmjx8">this desmos graph</a> for more details
+        <p>see <a href="https://www.desmos.com/calculator/se7klkmjx8">this desmos graph</a> for more details</p>
         <br />
         <ul>
             <li>previous time based on season best</li>
@@ -643,7 +643,7 @@ router.get("/:id", async ctx => {
                                     </figure>`;
 
                                     return html`
-                                    <input type="checkbox" _="on every input toggle .invisible on #aths_total then toggle .invisible on #aths_avg">sort by avg.</input>
+                                    <input type="checkbox" _="on every input toggle .invisible on #aths_total then toggle .invisible on #aths_avg" id="athletes_sort_avg"/><label for="athletes_sort_avg">sort by avg.</label>
                                     <div id="aths_total">${athTable("by total", athletesByTotal)}</div>
                                     <div id="aths_avg" class="invisible">${athTable("by average", athletesByAvg)}</div>
                                     `

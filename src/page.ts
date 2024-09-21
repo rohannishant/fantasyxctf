@@ -132,7 +132,7 @@ export const page = (title: string, body: () => string, state: any, showAuth: bo
 		${raw(body())}
 		<footer>
 			<p>
-				fantasyxctf alpha v1.4.3<br/>
+				fantasyxctf alpha v1.4.4<br/>
 				made by Rohan Nishant
 			</p>
 		</footer>
