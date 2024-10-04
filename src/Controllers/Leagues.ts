@@ -463,7 +463,6 @@ router.get("/:id", async ctx => {
                 ${
                     await (async () => {
                         const currentMeetQuery: meetTable[] = await sql`SELECT meets.* FROM seasons INNER JOIN meets ON meets.meet_id = seasons.current_meet WHERE seasons.season_id = ${query[0].season_id};`;
-                        const athletes: athleteTable[] = await sql`SELECT * from athletes WHERE season_id = ${query[0].season_id}`;
 
                         if (currentMeetQuery.length > 0) {
                             const currentMeetPicks: meetPicks[] = await sql`
@@ -476,8 +475,8 @@ router.get("/:id", async ctx => {
                             <select name="pick${no.toString()}" id="athlete-pick${no.toString()}">
                                 <option value="null">(pick an athlete)</option>
 
-                                ${athletes.map(athlete => html`
-                                    <option value="${athlete.athlete_id.toString()}" ${currentMeetPicks.length > 0 && athlete.athlete_id == (currentMeetPicks[0] as any)[`pick${no}`] ? "selected" : ""}>${athlete.athlete_name[0]}. ${athlete.athlete_name.split(" ")[1]} (${athlete.sex}, ${athleteYear(athlete.athlete_year)})</option>
+                                ${athletesByAvg.map(athlete => html`
+                                    <option value="${athlete.athlete_id.toString()}" ${currentMeetPicks.length > 0 && athlete.athlete_id == (currentMeetPicks[0] as any)[`pick${no}`] ? "selected" : ""}>${athlete.athlete_name[0]}. ${athlete.athlete_name.split(" ")[1]} (${athlete.sex}, ${athleteYear(athlete.athlete_year)}) (${athlete.total_score.toFixed()}, ${athlete.avg_score.toFixed()} avg.)</option>
                                         `)}
                             </select>
                             `;
@@ -520,6 +519,9 @@ router.get("/:id", async ctx => {
                                         ${athletePicker(3)}
                                     </fieldset>
 
+                                    <button type="button" onclick="document.querySelector('#athlete-pick1').value=${athletesByAvg[0].athlete_id.toString()};document.querySelector('#athlete-pick2').value=${athletesByAvg[1].athlete_id.toString()};document.querySelector('#athlete-pick3').value=${athletesByAvg[2].athlete_id.toString()};">
+                                        <i class="bi bi-robot"></i> auto
+                                    </button>
                                     <button type="submit"><i aria-hidden="true" class="bi bi-floppy-fill"></i> save picks</button>
                                 </form>
                             </details>
